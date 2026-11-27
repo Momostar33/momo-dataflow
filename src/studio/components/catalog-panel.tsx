@@ -1,3 +1,4 @@
+import { uiError, uiText, useUiLanguage } from "../i18n";
 import { useState, useEffect } from "react";
 import { Table2, Plus, Search, Trash2, ExternalLink } from "lucide-react";
 import { useMomoWorkspace } from "../state/momo-view";
@@ -17,6 +18,7 @@ export function CatalogPanel({
   onSelectTable,
   onSelectField,
 }: CatalogPanelProps) {
+  useUiLanguage();
   const ctx = useMomoWorkspace(),
     nav = useStudioNavigation();
   const view = projectCatalog(
@@ -57,7 +59,7 @@ export function CatalogPanel({
             <Search size={13} />
             <input
               data-testid="catalog-search"
-              placeholder="表名 / 说明名称 / 备注"
+              placeholder={uiText("表名 / 说明名称 / 备注")}
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
@@ -69,7 +71,7 @@ export function CatalogPanel({
             onClick={() => setNewTable(true)}
           >
             <Plus size={13} />
-            新建表
+            {uiText("新建表")}
           </button>
         </div>
         <div className="studio-panel-scroll">
@@ -97,10 +99,10 @@ export function CatalogPanel({
           {!tables.length && (
             <Empty>
               <Table2 size={24} />
-              目录为空，点击新建表开始。
+              {uiText("目录为空，点击新建表开始。")}
               {!db && (
                 <button onClick={() => nav.createDesign()}>
-                  先创建设计库
+                  {uiText("先创建设计库")}
                 </button>
               )}
             </Empty>
@@ -119,24 +121,28 @@ export function CatalogPanel({
               />
               <button
                 className="danger"
-                aria-label="删除选中表"
+                aria-label={uiText("删除选中表")}
                 onClick={() => setConfirm(true)}
               >
                 <Trash2 size={13} />
-                删除表
+                {uiText("删除表")}
               </button>
             </div>
             {error && (
               <p role="alert" className="studio-error">
-                {error}
+                {uiError(error)}
               </p>
             )}
             <div className="studio-table-block">
               <div className="studio-block-heading">
-                <strong>字段（{table.fields.length}）</strong>
+                <strong>
+                  {uiText("字段（")}
+                  {table.fields.length}
+                  {uiText("\uFF09")}
+                </strong>
                 <button data-testid="new-field" onClick={() => setField("new")}>
                   <Plus size={13} />
-                  新建字段
+                  {uiText("新建字段")}
                 </button>
               </div>
               <FieldList
@@ -151,14 +157,14 @@ export function CatalogPanel({
               />
             </div>
             <p className="studio-help">
-              此处管理表和字段。流程关系在业务流程编辑器中维护。
+              {uiText("此处管理表和字段。流程关系在业务流程编辑器中维护。")}
             </p>
             {ctx.state.draft.business?.refs.some(
               (r) => r.tableId === table.tableId,
             ) && (
               <div className="studio-table-block">
                 <div className="studio-block-heading">
-                  <strong>业务流程中的使用位置</strong>
+                  <strong>{uiText("业务流程中的使用位置")}</strong>
                 </div>
                 {ctx.state.draft.business.refs
                   .filter((r) => r.tableId === table.tableId)
@@ -188,11 +194,11 @@ export function CatalogPanel({
             )}
           </>
         ) : (
-          <Empty>从左侧选择一张表，或新建表。</Empty>
+          <Empty>{uiText("从左侧选择一张表，或新建表。")}</Empty>
         )}
       </section>
       {newTable && (
-        <Modal title="新建数据表" onClose={() => setNewTable(false)}>
+        <Modal title={uiText("新建数据表")} onClose={() => setNewTable(false)}>
           <TableEditor
             databaseId={db!}
             onApplied={(id) => {
@@ -207,8 +213,12 @@ export function CatalogPanel({
         <Modal
           title={
             field === "new"
-              ? `新建字段 · ${table.name}`
-              : `编辑字段 · ${table.name}`
+              ? uiText("新建字段 · {{v0}}", {
+                  v0: table.name,
+                })
+              : uiText("编辑字段 · {{v0}}", {
+                  v0: table.name,
+                })
           }
           onClose={() => setField(null)}
         >
@@ -222,12 +232,12 @@ export function CatalogPanel({
       )}
       {confirm && table && (
         <Modal
-          title={usage?.blocked ? "无法删除表" : "确认删除表"}
+          title={usage?.blocked ? uiText("无法删除表") : uiText("确认删除表")}
           onClose={() => setConfirm(false)}
         >
           {usage?.blocked ? (
             <>
-              <p>此表仍被下列对象引用，请先处理引用。</p>
+              <p>{uiText("此表仍被下列对象引用，请先处理引用。")}</p>
               {usage.usages.map((u, i) => (
                 <div className="studio-usage" key={i}>
                   {u.label || u.kind}
@@ -239,7 +249,7 @@ export function CatalogPanel({
                         )
                       }
                     >
-                      定位
+                      {uiText("定位")}
                     </button>
                   )}
                 </div>
@@ -247,9 +257,15 @@ export function CatalogPanel({
             </>
           ) : (
             <>
-              <p>删除「{table.label}」及其字段。取消不会修改目录。</p>
+              <p>
+                {uiText("删除「")}
+                {table.label}
+                {uiText("」及其字段。取消不会修改目录。")}
+              </p>
               <div className="studio-actions">
-                <button onClick={() => setConfirm(false)}>取消</button>
+                <button onClick={() => setConfirm(false)}>
+                  {uiText("取消")}
+                </button>
                 <button
                   className="danger"
                   onClick={() => {
@@ -260,7 +276,7 @@ export function CatalogPanel({
                     } else setError(r.error.message);
                   }}
                 >
-                  确认删除表
+                  {uiText("确认删除表")}
                 </button>
               </div>
             </>

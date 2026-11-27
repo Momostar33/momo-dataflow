@@ -1,3 +1,4 @@
+import { uiError, uiText, useUiLanguage } from "../i18n";
 import { useStudioNavigation } from "./studio-shell";
 import { Plus, Layers, Trash2 } from "lucide-react";
 import { SidePanel, Modal, Empty } from "./workbench-ui";
@@ -13,8 +14,8 @@ import { previewTemplateApplication } from "../domain/template-preview";
 import { applyTemplatePreview } from "../domain/template-application";
 import { TemplatePreviewDialog } from "./template-preview-dialog";
 import type { TemplatePreview } from "../domain/template-preview";
-
 export function TemplatesPage() {
+  useUiLanguage();
   const ctx = useWorkspace();
   const { databaseId } = useStudioNavigation();
   const [fieldQuery, setFieldQuery] = useState("");
@@ -35,7 +36,6 @@ export function TemplatesPage() {
         ctx.state.draft.metadata.fieldDisplayNames[f.id],
       ].some((v) => v?.toLowerCase().includes(fieldQuery.toLowerCase())),
   );
-
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [note, setNote] = useState("");
@@ -48,24 +48,19 @@ export function TemplatesPage() {
   const [maxLength, setMaxLength] = useState<string>("");
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   // Preview state
   const [preview, setPreview] = useState<TemplatePreview | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
-
   // Field selection state
   const [selectedFieldIds, setSelectedFieldIds] = useState<string[]>([]);
-
   const business = ctx.state.draft.business;
   const dataTypes = ctx.state.draft.catalog.dataTypes.filter(
     (d) => d.id !== null,
   );
-
   // Map tables for display
   const tablesMap = new Map(
     ctx.state.draft.catalog.tables.map((t) => [t.id, t]),
   );
-
   const loadTemplate = (id: string) => {
     const tmpl = business?.templates.find((t) => t.templateId === id);
     if (!tmpl) return;
@@ -87,7 +82,6 @@ export function TemplatesPage() {
     setPreviewError(null);
     setSelectedFieldIds([]);
   };
-
   const clearForm = () => {
     setSelectedId(null);
     setName("");
@@ -113,7 +107,6 @@ export function TemplatesPage() {
     setPreviewError(null);
     setSelectedFieldIds([]);
   };
-
   // Default precision/scale for new money template
   useEffect(() => {
     if (!selectedId && kind === "money" && precision === "" && scale === "") {
@@ -121,7 +114,6 @@ export function TemplatesPage() {
       setScale("2");
     }
   }, [selectedId, kind, precision, scale]);
-
   // Clear preview and field selection when template changes
   useEffect(() => {
     if (!selectedId) clearForm();
@@ -131,10 +123,9 @@ export function TemplatesPage() {
       setSelectedFieldIds([]);
     }
   }, [selectedId]);
-
   const handleApply = () => {
     if (!name.trim()) {
-      setError("模板名称不能为空");
+      setError(uiText("模板名称不能为空"));
       return;
     }
     const params = {
@@ -161,7 +152,6 @@ export function TemplatesPage() {
       }
     }
   };
-
   const handlePublish = () => {
     if (!selectedId) return;
     const params = {
@@ -176,11 +166,10 @@ export function TemplatesPage() {
     );
     if (!res.ok) setError(res.error.message);
   };
-
   const handlePreview = () => {
     if (!selectedId) return;
     if (selectedFieldIds.length === 0) {
-      setPreviewError("请选择字段");
+      setPreviewError(uiText("请选择字段"));
       setPreview(null);
       return;
     }
@@ -203,7 +192,6 @@ export function TemplatesPage() {
       setPreviewError(null);
     }
   };
-
   const handleConfirmPreview = () => {
     if (!preview) return;
     const res = ctx.applyOperation((state) =>
@@ -216,12 +204,10 @@ export function TemplatesPage() {
       setPreviewError(null);
     }
   };
-
   const handleCancelPreview = () => {
     setPreview(null);
     setPreviewError(null);
   };
-
   const selected = business?.templates.find((t) => t.templateId === selectedId);
   const latest = selected?.versions.reduce((a, b) =>
     a.version > b.version ? a : b,
@@ -240,10 +226,10 @@ export function TemplatesPage() {
     <div className="studio-template-workspace" data-testid="templates-root">
       <SidePanel initial={280}>
         <div className="studio-panel-heading">
-          <strong>字段模板</strong>
+          <strong>{uiText("字段模板")}</strong>
           <button data-testid="new-template" onClick={clearForm}>
             <Plus size={13} />
-            新建字段模板
+            {uiText("新建字段模板")}
           </button>
         </div>
         <div className="studio-panel-scroll">
@@ -259,7 +245,7 @@ export function TemplatesPage() {
                 <strong>{t.name}</strong>
                 <small>
                   v{Math.max(...t.versions.map((v) => v.version))} ·{" "}
-                  {t.kind === "money" ? "金额固定两位" : t.kind}
+                  {t.kind === "money" ? uiText("金额固定两位") : t.kind}
                 </small>
               </div>
             </button>
@@ -269,13 +255,15 @@ export function TemplatesPage() {
       <section className="studio-template-main">
         <div className="studio-page-title">
           <div>
-            <h2>{selected?.name ?? "新建字段模板"}</h2>
-            <p>字段采用模板后参数统一；发布新版不会自动修改已有字段。</p>
+            <h2>{selected?.name ?? uiText("新建字段模板")}</h2>
+            <p>
+              {uiText("字段采用模板后参数统一；发布新版不会自动修改已有字段。")}
+            </p>
           </div>
           {selected && (
             <button className="danger" onClick={() => setDeleting(true)}>
               <Trash2 size={13} />
-              删除模板
+              {uiText("删除模板")}
             </button>
           )}
         </div>
@@ -283,12 +271,17 @@ export function TemplatesPage() {
           <section className="studio-table-block studio-template-form">
             <div className="studio-block-heading">
               <strong>
-                类型配置{latest ? ` · 当前 v${latest.version}` : ""}
+                {uiText("类型配置")}
+                {latest
+                  ? uiText(" · 当前 v{{v0}}", {
+                      v0: latest.version,
+                    })
+                  : ""}
               </strong>
             </div>
             <div className="studio-form-grid">
               <label>
-                模板名称
+                {uiText("模板名称")}
                 <input
                   data-testid="template-name"
                   value={name}
@@ -296,7 +289,7 @@ export function TemplatesPage() {
                 />
               </label>
               <label>
-                业务类型
+                {uiText("业务类型")}
                 <select
                   data-testid="template-kind"
                   value={kind}
@@ -314,21 +307,21 @@ export function TemplatesPage() {
                     }
                   }}
                 >
-                  <option value="money">金额</option>
-                  <option value="int">整数</option>
-                  <option value="text">文本</option>
-                  <option value="datetime">日期时间</option>
-                  <option value="custom">自定义</option>
+                  <option value="money">{uiText("金额")}</option>
+                  <option value="int">{uiText("整数")}</option>
+                  <option value="text">{uiText("文本")}</option>
+                  <option value="datetime">{uiText("日期时间")}</option>
+                  <option value="custom">{uiText("自定义")}</option>
                 </select>
               </label>
               <label>
-                技术类型
+                {uiText("技术类型")}
                 <select
                   data-testid="template-type"
                   value={typeId}
                   onChange={(e) => setTypeId(e.target.value)}
                 >
-                  <option value="">请选择</option>
+                  <option value="">{uiText("请选择")}</option>
                   {dataTypes
                     .filter(
                       (d) =>
@@ -342,7 +335,7 @@ export function TemplatesPage() {
                 </select>
               </label>
               <label>
-                总精度
+                {uiText("总精度")}
                 <input
                   data-testid="template-precision"
                   type="number"
@@ -351,7 +344,8 @@ export function TemplatesPage() {
                 />
               </label>
               <label>
-                小数位{kind === "money" ? "（固定2）" : ""}
+                {uiText("小数位")}
+                {kind === "money" ? uiText("（固定2）") : ""}
                 <input
                   data-testid="template-scale"
                   type="number"
@@ -361,7 +355,7 @@ export function TemplatesPage() {
                 />
               </label>
               <label>
-                字符长度
+                {uiText("字符长度")}
                 <input
                   data-testid="template-length"
                   type="number"
@@ -371,7 +365,7 @@ export function TemplatesPage() {
                 />
               </label>
               <label className="studio-form-full">
-                备注
+                {uiText("备注")}
                 <textarea
                   data-testid="template-note"
                   value={note}
@@ -381,7 +375,7 @@ export function TemplatesPage() {
             </div>
             {error && (
               <p role="alert" className="studio-error">
-                {error}
+                {uiError(error)}
               </p>
             )}
             <div className="studio-actions">
@@ -390,42 +384,47 @@ export function TemplatesPage() {
                 data-testid="template-apply"
                 onClick={handleApply}
               >
-                {selectedId ? "更新名称与备注" : "创建模板"}
+                {selectedId ? uiText("更新名称与备注") : uiText("创建模板")}
               </button>
               {selectedId && (
                 <button data-testid="template-publish" onClick={handlePublish}>
-                  发布新版本
+                  {uiText("发布新版本")}
                 </button>
               )}
             </div>
             {selected && (
               <p className="studio-help">
-                历史版本：
-                {selected.versions.map((v) => `v${v.version}`).join(" / ")} ·
-                字段继续采用原版本，直到确认应用。
+                {uiText("历史版本：")}
+                {selected.versions.map((v) => `v${v.version}`).join(" / ")}
+                {uiText(" · 字段继续采用原版本，直到确认应用。")}
               </p>
             )}
           </section>
           <section className="studio-table-block studio-template-targets">
             <div className="studio-block-heading">
-              <strong>选择批量应用的字段</strong>
-              <span>{pendingFields.length} 项待更新</span>
+              <strong>{uiText("选择批量应用的字段")}</strong>
+              <span>
+                {pendingFields.length}
+                {uiText(" 项待更新")}
+              </span>
             </div>
             <label className="studio-search">
               <input
-                aria-label="搜索待应用字段"
-                placeholder="搜索当前设计库的表名或字段"
+                aria-label={uiText("搜索待应用字段")}
+                placeholder={uiText("搜索当前设计库的表名或字段")}
                 value={fieldQuery}
                 onChange={(e) => setFieldQuery(e.target.value)}
               />
             </label>
             {targetFields.length > 150 && (
               <p className="studio-help">
-                当前匹配{targetFields.length}项，显示前150项；请用搜索定位字段。
+                {uiText("当前匹配")}
+                {targetFields.length}
+                {uiText("项，显示前150项；请用搜索定位字段。")}
               </p>
             )}
             {!eligibleFields.length ? (
-              <Empty>先在表目录创建字段，再预览应用模板。</Empty>
+              <Empty>{uiText("先在表目录创建字段，再预览应用模板。")}</Empty>
             ) : (
               targetFields.slice(0, 150).map((f) => (
                 <label className="studio-checkbox-row" key={f.id}>
@@ -454,7 +453,7 @@ export function TemplatesPage() {
                     setSelectedFieldIds(pendingFields.map((a) => a.fieldId))
                   }
                 >
-                  选择全部待更新字段
+                  {uiText("选择全部待更新字段")}
                 </button>
               )}
               <button
@@ -462,10 +461,14 @@ export function TemplatesPage() {
                 disabled={!selectedId || !selectedFieldIds.length}
                 onClick={handlePreview}
               >
-                预览更改（{selectedFieldIds.length}）
+                {uiText("预览更改（")}
+                {selectedFieldIds.length}
+                {uiText("\uFF09")}
               </button>
             </div>
-            {previewError && <p className="studio-error">{previewError}</p>}
+            {previewError && (
+              <p className="studio-error">{uiError(previewError)}</p>
+            )}
           </section>
         </div>
       </section>
@@ -481,12 +484,16 @@ export function TemplatesPage() {
       )}
       {deleting && selected && (
         <Modal
-          title={"删除模板「" + selected.name + "」"}
+          title={uiText("删除模板「") + selected.name + "」"}
           onClose={() => setDeleting(false)}
         >
-          <p>仅能删除没有字段采用的非金额模板，旧版本采用也会阻止删除。</p>
+          <p>
+            {uiText(
+              "仅能删除没有字段采用的非金额模板，旧版本采用也会阻止删除。",
+            )}
+          </p>
           <div className="studio-actions">
-            <button onClick={() => setDeleting(false)}>取消</button>
+            <button onClick={() => setDeleting(false)}>{uiText("取消")}</button>
             <button
               className="danger"
               onClick={() => {
@@ -502,7 +509,7 @@ export function TemplatesPage() {
                 }
               }}
             >
-              确认删除模板
+              {uiText("确认删除模板")}
             </button>
           </div>
         </Modal>

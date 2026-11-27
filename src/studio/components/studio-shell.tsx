@@ -1,3 +1,5 @@
+import { LanguageSwitch } from "./language-switch";
+import { uiError, uiText, useUiLanguage } from "../i18n";
 // Modified for Momo DataFlow, 2026-11-27. See NOTICE.md.
 import { CreateDesignDialog } from "./create-design-dialog";
 import { DesignLibraryDialog } from "./design-library-dialog";
@@ -36,6 +38,7 @@ const NavContext = createContext<{
 }>({ go: () => {}, databaseId: "", createDesign: () => {} });
 export const useStudioNavigation = () => useContext(NavContext);
 export function StudioShell({ children }: { children?: ReactNode }) {
+  useUiLanguage();
   const [initial, setInitial] = useState<WorkspaceState | null>(null),
     [error, setError] = useState(""),
     [retry, setRetry] = useState(0);
@@ -63,15 +66,18 @@ export function StudioShell({ children }: { children?: ReactNode }) {
     return (
       <div className="studio-workbench">
         <div className="studio-empty" role="alert">
-          载入失败：{error}
-          <button onClick={() => setRetry((n) => n + 1)}>重试</button>
+          {uiText("载入失败：")}
+          {uiError(error)}
+          <button onClick={() => setRetry((n) => n + 1)}>
+            {uiText("重试")}
+          </button>
         </div>
       </div>
     );
   if (!initial)
     return (
       <div className="studio-workbench">
-        <div className="studio-empty">正在读取本机设计工作区…</div>
+        <div className="studio-empty">{uiText("正在读取本机设计工作区…")}</div>
       </div>
     );
   return (
@@ -81,6 +87,7 @@ export function StudioShell({ children }: { children?: ReactNode }) {
   );
 }
 function Workbench({ children }: { children?: ReactNode }) {
+  useUiLanguage();
   const ctx = useWorkspace(),
     location = useLocation(),
     databaseOperations = useDatabaseOperations();
@@ -124,16 +131,28 @@ function Workbench({ children }: { children?: ReactNode }) {
     if (to !== location.pathname) guard.requestLeave(to);
   };
   const sections = [
-    { to: "/studio/tables", name: "表字段", Icon: Table2 },
-    { to: "/studio/templates", name: "字段模板", Icon: SlidersHorizontal },
-    { to: "/studio/flows", name: "业务流程", Icon: Workflow },
-    { to: "/studio/overview", name: "关系总览", Icon: Network },
+    { to: "/studio/tables", name: uiText("表字段"), Icon: Table2 },
+    {
+      to: "/studio/templates",
+      name: uiText("字段模板"),
+      Icon: SlidersHorizontal,
+    },
+    {
+      to: "/studio/flows",
+      name: uiText("业务流程"),
+      Icon: Workflow,
+    },
+    {
+      to: "/studio/overview",
+      name: uiText("关系总览"),
+      Icon: Network,
+    },
   ];
   const flow = ctx.state.draft.business?.flows.find((f) =>
     location.pathname.endsWith("/" + f.flowId),
   );
   const title = flow
-    ? "业务流程 / " + flow.name
+    ? uiText("业务流程 / ") + flow.name
     : (sections.find((s) => location.pathname.startsWith(s.to))?.name ?? "");
   function commitDb() {
     if (switchDb) {
@@ -143,7 +162,9 @@ function Workbench({ children }: { children?: ReactNode }) {
     }
   }
   return (
-    <NavContext.Provider value={{ go, databaseId: db, createDesign: () => setCreateOpen(true) }}>
+    <NavContext.Provider
+      value={{ go, databaseId: db, createDesign: () => setCreateOpen(true) }}
+    >
       <div
         className="studio-workbench"
         data-testid="studio-root"
@@ -185,7 +206,7 @@ function Workbench({ children }: { children?: ReactNode }) {
               Momo <em>DataFlow</em>
             </strong>
           </Link>
-          <nav aria-label="工作区导航">
+          <nav aria-label={uiText("工作区导航")}>
             {sections.map((s) => (
               <Link
                 key={s.to}
@@ -207,9 +228,9 @@ function Workbench({ children }: { children?: ReactNode }) {
               {title}
             </span>
             <label className="studio-db-label">
-              设计库{" "}
+              {uiText("设计库")}{" "}
               <select
-                aria-label="设计库"
+                aria-label={uiText("设计库")}
                 data-testid="workspace-database"
                 value={db}
                 onChange={(e) => {
@@ -225,7 +246,7 @@ function Workbench({ children }: { children?: ReactNode }) {
                 }}
               >
                 {!ctx.state.draft.catalog.databases.length && (
-                  <option value="">尚未创建</option>
+                  <option value="">{uiText("尚未创建")}</option>
                 )}
                 {ctx.state.draft.catalog.databases.map((d) => (
                   <option key={d.id} value={d.id}>
@@ -234,7 +255,13 @@ function Workbench({ children }: { children?: ReactNode }) {
                 ))}
               </select>
             </label>
-            <button className="studio-settings-button" data-testid="open-new-design" onClick={() => setCreateOpen(true)}>新建设计库</button>
+            <button
+              className="studio-settings-button"
+              data-testid="open-new-design"
+              onClick={() => setCreateOpen(true)}
+            >
+              {uiText("新建设计库")}
+            </button>
             <button
               data-testid="open-design-import"
               className="studio-settings-button"
@@ -243,7 +270,7 @@ function Workbench({ children }: { children?: ReactNode }) {
                 setImportOpen(true);
               }}
             >
-              导入设计包
+              {uiText("导入设计包")}
             </button>
             <button
               className="studio-settings-button"
@@ -251,21 +278,23 @@ function Workbench({ children }: { children?: ReactNode }) {
               disabled={!db}
               onClick={() => setDeleteLibraryOpen(true)}
             >
-              删除设计库
+              {uiText("删除设计库")}
             </button>
+            <LanguageSwitch />
             <SaveStatus />
             <button
               className="studio-settings-button"
               onClick={() => setSettings(true)}
             >
               <Settings size={14} />
-              设置
+              {uiText("设置")}
             </button>
           </div>
         </header>
         {ctx.lastSaveError && (
           <div className="studio-error" role="alert">
-            {ctx.lastSaveError.message}，草稿已保留。
+            {uiError(ctx.lastSaveError.message)}
+            {uiText("，草稿已保留。")}
           </div>
         )}
         <main className="studio-content" key={db}>
@@ -273,19 +302,69 @@ function Workbench({ children }: { children?: ReactNode }) {
         </main>
         <footer className="studio-footer">
           <span>
-            本机 SQLite · {ctx.isDirty ? "有未保存修改" : "已保存"} · 自动保存{" "}
-            {ctx.state.draft.business?.settings.autosaveMinutes ?? 5} 分钟
+            {uiText("本机 SQLite · ")}
+            {ctx.isDirty ? uiText("有未保存修改") : uiText("已保存")}
+            {uiText(" · 自动保存")}{" "}
+            {ctx.state.draft.business?.settings.autosaveMinutes ?? 5}
+            {uiText(" 分钟")}
           </span>
-          <span>只描述业务逻辑，不执行公式与触发动作 · <button onClick={() => setAboutOpen(true)}>关于与许可证</button></span>
+          <span>
+            {uiText("只描述业务逻辑，不执行公式与触发动作 · ")}
+            <button onClick={() => setAboutOpen(true)}>
+              {uiText("关于与许可证")}
+            </button>
+          </span>
         </footer>
-        {createOpen && <CreateDesignDialog onClose={() => setCreateOpen(false)} onCreated={(id) => {
-          databaseOperations.switchDatabase(id); setDb(id); setCreateOpen(false); go("/studio/tables");
-        }} />}
-        {aboutOpen && <Modal title="关于 Momo DataFlow" onClose={() => setAboutOpen(false)}>
-          <p>Momo DataFlow 0.1.0-beta.3，基于 StackRender 二次开发。修改日期：2026-11-27。</p>
-          <p>原项目及贡献者版权继续保留；本修改版依 GNU AGPL v3 提供，不附带任何担保。</p>
-          <p><a href="https://github.com/stackrender/stackrender" target="_blank" rel="noreferrer">StackRender 原项目</a> · <a href="https://github.com/Momostar33/momo-dataflow" target="_blank" rel="noreferrer">本版本源代码</a> · <a href="/LICENSE.txt" target="_blank" rel="noreferrer">AGPL-3.0 许可全文</a></p>
-        </Modal>}
+        {createOpen && (
+          <CreateDesignDialog
+            onClose={() => setCreateOpen(false)}
+            onCreated={(id) => {
+              databaseOperations.switchDatabase(id);
+              setDb(id);
+              setCreateOpen(false);
+              go("/studio/tables");
+            }}
+          />
+        )}
+        {aboutOpen && (
+          <Modal
+            title={uiText("关于 Momo DataFlow")}
+            onClose={() => setAboutOpen(false)}
+          >
+            <p>
+              {uiText(
+                "Momo DataFlow 0.1.0-beta.4，基于 StackRender 二次开发。修改日期：2026-11-27。",
+              )}
+            </p>
+            <p>
+              {uiText(
+                "原项目及贡献者版权继续保留；本修改版依 GNU AGPL v3 提供，不附带任何担保。",
+              )}
+            </p>
+            <p>{uiText("你可以依据 GNU AGPL v3 复制、修改和再分发本版本。")}</p>
+            <p>
+              <a
+                href="https://github.com/stackrender/stackrender"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {uiText("StackRender 原项目")}
+              </a>{" "}
+              ·{" "}
+              <a
+                href="https://github.com/Momostar33/momo-dataflow"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {uiText("本版本源代码")}
+              </a>{" "}
+              ·{" "}
+              <a href="/LICENSE.txt" target="_blank" rel="noreferrer">
+                {uiText("AGPL-3.0 许可全文")}
+              </a>
+            </p>
+          </Modal>
+        )}
         {importOpen && (
           <DesignImportDialog
             initialFiles={importFiles}
@@ -311,23 +390,26 @@ function Workbench({ children }: { children?: ReactNode }) {
           />
         )}
         {settings && (
-          <Modal title="工作区设置" onClose={() => setSettings(false)}>
+          <Modal
+            title={uiText("工作区设置")}
+            onClose={() => setSettings(false)}
+          >
             <SaveSettings manageAutosave={false} />
             <p className="studio-muted">
-              绘制数据保存在当前浏览器的本机 SQLite 中。
+              {uiText("绘制数据保存在当前浏览器的本机 SQLite 中。")}
             </p>
-            <button onClick={() => setSettings(false)}>完成</button>
+            <button onClick={() => setSettings(false)}>{uiText("完成")}</button>
           </Modal>
         )}
         {guard.pendingTo && (
           <Modal
-            title="有未保存的更改"
+            title={uiText("有未保存的更改")}
             onClose={() => {
               guard.cancel();
               setSwitchDb(null);
             }}
           >
-            <p>离开前请选择如何处理工作区草稿。</p>
+            <p>{uiText("离开前请选择如何处理工作区草稿。")}</p>
             <div className="studio-actions">
               <button
                 data-testid="nav-cancel"
@@ -336,7 +418,7 @@ function Workbench({ children }: { children?: ReactNode }) {
                   setSwitchDb(null);
                 }}
               >
-                取消
+                {uiText("取消")}
               </button>
               <button
                 data-testid="nav-discard"
@@ -346,7 +428,7 @@ function Workbench({ children }: { children?: ReactNode }) {
                   guard.cancel();
                 }}
               >
-                丢弃并继续
+                {uiText("丢弃并继续")}
               </button>
               <button
                 className="primary"
@@ -359,7 +441,7 @@ function Workbench({ children }: { children?: ReactNode }) {
                   } catch {}
                 }}
               >
-                保存并继续
+                {uiText("保存并继续")}
               </button>
             </div>
           </Modal>

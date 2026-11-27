@@ -1,6 +1,12 @@
 # Momo DataFlow 使用说明
 
-版本：0.1.0-beta.3；修改日期：2026-11-27。基于 StackRender 二次开发，来源与许可证见仓库根 NOTICE.md 和 LICENSE。
+版本：0.1.0-beta.4；修改日期：2026-11-27。基于 StackRender 二次开发，来源与许可证见仓库根 NOTICE.md 和 LICENSE。
+
+[English user guide](USER_GUIDE_EN.md)
+
+## 中英文界面
+
+顶部语言选择器支持中文与 English，首次默认中文，偏好保存在当前浏览器。切换界面语言不翻译或重写已有表名、字段说明、业务备注、表达式与稳定 ID；已打开编辑器的草稿保留。新建关系按所选语言使用“关系1”或“Relation1”，共享同一编号序列，已有名称不改。
 
 ## 开始使用
 
@@ -50,3 +56,7 @@ v1 只追加新库，不覆盖/合并。已有同名库或 ID 冲突会拒绝。
 - 原 SQL 类型未识别：类型说明会保留，不猜替代类型。
 - 保存失败：保留草稿、查看错误，不清空站点数据重试。
 - 换地址或浏览器后为空：不同来源/个人资料的数据互不自动同步。
+
+## 智能体整理 JSON
+
+先读 [智能体说明](AGENT_GUIDE.md)、[任务模板](templates/design-package-task.md) 和 [JSON Schema](design-package-v1.schema.json)，按已确认业务来源填写。可用 `npm run validate:design -- /path/file.json` 调用只读原生校验；它不等于浏览器导入或业务验收。

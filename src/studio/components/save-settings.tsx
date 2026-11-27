@@ -1,8 +1,8 @@
+import { uiError, uiText, useUiLanguage } from "../i18n";
 import { useState, useEffect, useCallback } from "react";
 import { useWorkspace } from "../state/workspace-provider";
 import { useAutosave } from "../state/use-autosave";
 import { withDraftMutations } from "../state/workspace-state";
-
 /**
  * SaveSettings component allows the user to configure the autosave interval.
  *
@@ -21,28 +21,25 @@ import { withDraftMutations } from "../state/workspace-state";
  */
 export function SaveSettings({
   manageAutosave = true,
-}: { manageAutosave?: boolean } = {}): JSX.Element {
+}: {
+  manageAutosave?: boolean;
+} = {}): JSX.Element {
+  useUiLanguage();
   const ctx = useWorkspace();
-
   // Current autosave minutes from business settings (default 5)
   const currentMinutes =
     ctx.state.draft.business?.settings?.autosaveMinutes ?? 5;
-
   // Local input state (string to allow empty input)
   const [input, setInput] = useState<string>(String(currentMinutes));
-
   // Local error state for invalid input
   const [error, setError] = useState<string | null>(null);
-
   // Sync local input when context changes
   useEffect(() => {
     setInput(String(currentMinutes));
     setError(null);
   }, [currentMinutes]);
-
   // Maximum minutes allowed by the browser timer (2^31-1 ms)
   const MAX_MINUTES = Math.floor(2147483647 / 60000);
-
   // Apply the new autosave interval
   const apply = useCallback(() => {
     const parsed = Number(input);
@@ -55,9 +52,7 @@ export function SaveSettings({
       setError("Invalid minutes");
       return;
     }
-
     setError(null);
-
     ctx.applyOperation((state) => {
       const newState = withDraftMutations(state, (draft) => {
         if (!draft.business) {
@@ -77,7 +72,6 @@ export function SaveSettings({
       return { ok: true, state: newState };
     });
   }, [input, ctx]);
-
   // Hook the autosave logic with the current interval
   useAutosave({
     isDirty: manageAutosave && ctx.isDirty,
@@ -85,11 +79,10 @@ export function SaveSettings({
     minutes: currentMinutes,
     save: ctx.save,
   });
-
   return (
     <div data-testid="autosave-settings">
       <label>
-        自动保存间隔（分钟）:
+        {uiText("自动保存间隔（分钟）:")}
         <input
           type="number"
           data-testid="autosave-minutes"
@@ -99,13 +92,13 @@ export function SaveSettings({
           max={MAX_MINUTES}
         />
       </label>
-      {error && <span style={{ color: "red" }}>{error}</span>}
+      {error && <span style={{ color: "red" }}>{uiError(error)}</span>}
       <button
         type="button"
         data-testid="autosave-settings-apply"
         onClick={apply}
       >
-        应用设置
+        {uiText("应用设置")}
       </button>
     </div>
   );

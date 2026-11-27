@@ -1,12 +1,28 @@
 # Momo DataFlow
 
+**简体中文** · [English](README.en.md)
+
 **基于 [StackRender](https://github.com/stackrender/stackrender) 二次开发的业务流程与数据关系设计工具。**
 
 把业务步骤、参与的表、字段条件和映射公式放在同一个工作台里，帮助梳理“哪些表参与哪个业务、字段从哪里来、关系怎样传递”。
 
 A local-first business flow and data relationship workbench, derived from StackRender. Independently maintained; not an official StackRender release.
 
-> **v0.1.0-beta.3 · 预览版**。关系、公式和触发箭头用于设计说明，不执行计算或业务任务。
+> **v0.1.0-beta.4 · 预览版**。关系、公式和触发箭头用于设计说明，不执行计算或业务任务。
+
+## 界面截图
+
+截图来自本地真实界面，使用完全虚构的设计。中英文切换只改变界面，不翻译用户填写的表名、字段说明和业务备注。
+
+![业务流程与字段公式（中文界面）](docs/images/flow-zh.jpg)
+
+[查看英文界面](docs/images/flow-en.jpg)
+
+| 表与字段管理 | 字段模板 | 只读关系总览 |
+| --- | --- | --- |
+| ![表与字段](docs/images/catalog-en.jpg) | ![字段模板](docs/images/templates-en.jpg) | ![关系总览](docs/images/overview-en.jpg) |
+
+[截图说明](docs/images/README.md) · [可导入的虚构展示包](docs/usage/examples/showcase-purchase.stackrender.json)。包内初始只有表、普通步骤和等值条件；截图里的模板、公式通过界面添加，不能把它们误认为 v1 已支持导入。
 
 ## 与原版 StackRender 的关系
 
@@ -31,6 +47,7 @@ StackRender 原版主要提供数据库结构图（ERD）、表与字段设计�
 - **便捷输入**：把展开表中的字段拖进公式，或在 Mac 上按住 `⌘` 点击插入；也可用“表／字段”两列选择器，自己输入运算符号。
 - **只读关系总览**：自动布局表之间的关系，查看关联业务模块；修改回到具体业务流程。
 - **工作台操作**：右侧面板可调宽、收起；设计包可拖入窗口预览后导入；确认后删除字段或整个设计库。
+- **中英文界面**：顶部选择中文或 English，偏好保存在当前浏览器；切换语言保留已有设计与正在编辑的内容。
 - **本地保存**：手动保存，默认每 5 分钟自动保存，可设置间隔。
 
 删除字段前会提示影响；确认后同时移除依赖该字段的关系或整条业务规则（包含该规则的其他条件和映射），避免残留错误引用。删除设计库会清理其表、字段和流程等内容，保留其他设计库及共享模板。删除字段先修改草稿，保存前可丢弃整份未保存草稿；删除设计库在确认后立即写入本地数据库。均不提供回收站，请先确认影响范围。
@@ -46,7 +63,7 @@ npm ci
 npm run dev
 ```
 
-打开 **http://127.0.0.1:4327**。首次使用点击“新建设计库”，再创建表、字段和业务流程；也可通过“导入设计包”导入 [虚构示例](docs/usage/examples/design-package-v1.example.json)。当前新库采用 MySQL 设计类型，不需要真实 MySQL 服务或数据库账号。
+打开 **http://127.0.0.1:4327**。顶部可切换 **中文 / English**，首次默认中文。首次使用点击“新建设计库”，再创建表、字段和业务流程；也可通过“导入设计包”导入 [虚构示例](docs/usage/examples/design-package-v1.example.json)。当前新库采用 MySQL 设计类型，不需要真实 MySQL 服务或数据库账号。
 
 查看生产构建：
 
@@ -72,6 +89,16 @@ v1 支持表、字段、普通步骤、表引用和字段等值条件；**尚不
 - 当前不提供账号体系、云同步或多人实时协作。
 - 请勿在公开示例、Issue 或截图里提交密码、Token、真实业务数据和浏览器数据库。
 
+## 给 Codex 等智能体使用
+
+仓库 [AGENTS.md](AGENTS.md) 指向 [智能体说明](docs/usage/AGENT_GUIDE.md)、[结构 Schema](docs/usage/design-package-v1.schema.json) 和 [任务模板](docs/usage/templates/design-package-task.md)。先读取业务项目的确认资料和用户修改，再参照虚构示例整理 JSON；未知业务规则不能靠模型猜测。
+
+```sh
+npm run validate:design -- /absolute/path/to/design.stackrender.json
+```
+
+该命令复用原生导入器，在内存中校验结构和引用，不写浏览器 SQLite、不修改源 JSON、不执行模型或业务任务。通过校验不等于导入到现有工作区，也不等于业务确认；已有工作区仍可能存在名称/ID 冲突。
+
 ## 开发与验证
 
 ```sh
@@ -91,4 +118,6 @@ npm run build
 
 基于 [StackRender](https://github.com/stackrender/stackrender) 二次开发，感谢 StackRender 原作者及全部贡献者。本项目为独立衍生版本，与原项目不存在官方隶属关系。
 
-沿用 **GNU Affero General Public License v3（AGPLv3）**，保留原许可全文与版权声明，不附带任何担保。详见 [LICENSE](LICENSE) 和 [NOTICE](NOTICE.md)。
+沿用 **GNU Affero General Public License v3（AGPLv3）**，保留原许可全文与版权声明，不附带任何担保。你可以依据该许可证复制、修改和再分发。详见 [LICENSE](LICENSE) 和 [NOTICE](NOTICE.md)。
+
+发布构建或向他人托管修改版时，须按许可证要求提供对应版本源码，并保留可见的源码/许可入口；截图和原项目链接不能代替对应源码。

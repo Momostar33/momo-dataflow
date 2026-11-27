@@ -2,6 +2,8 @@
 
 更新日期：2026-11-27。源码合同：[`design-import.ts`](../../src/studio/domain/design-import.ts)，界面限制：[`design-import-dialog.tsx`](../../src/studio/components/design-import-dialog.tsx)。这是当前已实现格式说明；未知扩展不当成已支持。
 
+[English](DESIGN_PACKAGE_JSON_EN.md) · [机器可读 Schema](design-package-v1.schema.json) · [智能体说明](AGENT_GUIDE.md) · [任务模板](templates/design-package-task.md)
+
 ## 1. 文件与用途
 
 使用 UTF-8、合法 JSON，无注释/尾逗号，建议扩展名 `.stackrender.json`。可直接编辑文件，保留稳定实体ID并同步引用；不是修改浏览器运行存储。最小完整例子见 [design-package-v1.example.json](examples/design-package-v1.example.json)，其中只有虚构结构。
@@ -126,3 +128,7 @@ UI文件上限30MiB；包内表≤2000、模块≤500、规则≤10000、累计�
 5. 通知用户如何导入/修改；写清是否真的导入浏览器。不得用规划器通过冒充真实页面导入或业务验收。
 
 相关实现：[`business.ts`](../../src/studio/contracts/business.ts)、[`catalog.ts`](../../src/studio/contracts/catalog.ts)、[`rule-validation.ts`](../../src/studio/domain/rule-validation.ts)、[`local-workspace.ts`](../../src/studio/local-workspace.ts)。
+
+## 原生只读校验
+
+运行 `npm run validate:design -- /absolute/path/to/design.stackrender.json`，使用当前原生导入规划器和内存 MySQL 类型库。它校验 ID、引用、类型兼容及 v1 限制，不写浏览器或源文件。通过不等于现有浏览器工作区可导入：实际名称/ID 冲突、持久化基线仍在界面中校验。Schema 描述保守的生成结构，不能替代原生语义检查。

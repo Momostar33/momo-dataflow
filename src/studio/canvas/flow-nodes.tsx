@@ -1,3 +1,4 @@
+import { uiText, useUiLanguage } from "../i18n";
 import { useFieldInsertion } from "../components/field-insertion-context";
 import { FIELD_DRAG_TYPE } from "../domain/field-insertion";
 import { toast } from "sonner";
@@ -23,12 +24,22 @@ import { updateReference } from "../domain/references";
 import type { Step, TableRef } from "../contracts/business";
 import type { TableView } from "../projection/catalog-view";
 import { encodeFieldHandle } from "./field-handle";
-export type StepFlowNode = Node<{ step: Step; flowId: string }, "step">;
+export type StepFlowNode = Node<
+  {
+    step: Step;
+    flowId: string;
+  },
+  "step"
+>;
 export type ReferenceFlowNode = Node<
-  { reference: TableRef; table?: TableView },
+  {
+    reference: TableRef;
+    table?: TableView;
+  },
   "reference"
 >;
 export function StepNode({ data, selected }: NodeProps<StepFlowNode>) {
+  useUiLanguage();
   const { applyOperation } = useWorkspace();
   const s = data.step,
     kind = s.kind ?? "step";
@@ -67,7 +78,7 @@ export function StepNode({ data, selected }: NodeProps<StepFlowNode>) {
       <div className="studio-node-heading">
         <Icon size={14} />
         <strong>{s.name}</strong>
-        {kind === "step" && <span>业务步骤</span>}
+        {kind === "step" && <span>{uiText("业务步骤")}</span>}
       </div>
       {kind !== "step" && s.note && <p>{s.note}</p>}
       {kind !== "start" && (
@@ -93,11 +104,16 @@ export function ReferenceNode({
   data,
   selected,
 }: NodeProps<ReferenceFlowNode>) {
+  useUiLanguage();
   const { applyOperation } = useWorkspace();
   const { reference: r, table } = data;
   const fieldInsertion = useFieldInsertion();
   if (!table)
-    return <div className="studio-ref-node studio-error">此表定义已不存在</div>;
+    return (
+      <div className="studio-ref-node studio-error">
+        {uiText("此表定义已不存在")}
+      </div>
+    );
   const fields = r.visibleFieldIds
     ? table.fields.filter((f) => r.visibleFieldIds!.includes(f.fieldId))
     : table.fields;
@@ -120,7 +136,7 @@ export function ReferenceNode({
         </div>
         <button
           className="nodrag"
-          aria-label={r.collapsed ? "展开表字段" : "折叠表字段"}
+          aria-label={r.collapsed ? uiText("展开表字段") : uiText("折叠表字段")}
           onClick={(e) => {
             e.stopPropagation();
             applyOperation((s) =>
@@ -143,7 +159,7 @@ export function ReferenceNode({
             key={f.fieldId}
             className="studio-ref-field nodrag"
             draggable
-            title="拖入公式，或 Ctrl/⌘ 点击插入"
+            title={uiText("拖入公式，或 Ctrl/⌘ 点击插入")}
             onDragStart={(e) => {
               e.stopPropagation();
               e.dataTransfer.setData(
@@ -159,7 +175,7 @@ export function ReferenceNode({
                 if (
                   !fieldInsertion.insert({ refId: r.refId, fieldId: f.fieldId })
                 )
-                  toast.info("请先打开要编辑的字段关系");
+                  toast.info(uiText("请先打开要编辑的字段关系"));
               }
             }}
             data-testid={`reference-field-${r.refId}-${f.fieldId}`}
@@ -170,7 +186,7 @@ export function ReferenceNode({
               id={encodeFieldHandle({ refId: r.refId, fieldId: f.fieldId })}
             />
             <span title={f.note ?? ""}>{f.label}</span>
-            <code>{f.raw.typeId ? f.typeName : "未设类型"}</code>
+            <code>{f.raw.typeId ? f.typeName : uiText("未设类型")}</code>
             <Handle
               type="source"
               position={Position.Right}
@@ -179,7 +195,9 @@ export function ReferenceNode({
           </div>
         ))}
       {!r.collapsed && fields.length === 0 && (
-        <p className="studio-muted">尚无可见字段，在右侧选择字段。</p>
+        <p className="studio-muted">
+          {uiText("尚无可见字段，在右侧选择字段。")}
+        </p>
       )}
     </div>
   );

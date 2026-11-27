@@ -1,3 +1,4 @@
+import { uiError, uiText, useUiLanguage } from "../i18n";
 import { nextRelationName } from "../domain/relation-names";
 import { useState, useEffect, useMemo } from "react";
 import {
@@ -43,6 +44,7 @@ export function FlowCanvas({
   onSelect,
   onTransitionCandidate,
 }: FlowCanvasProps) {
+  useUiLanguage();
   const { state, applyOperation } = useWorkspace(),
     rf = useReactFlow();
   const [pending, setPending] = useState<Connection | null>(null),
@@ -130,7 +132,7 @@ export function FlowCanvas({
       target: e.targetStepId,
       sourceHandle: "flow-out",
       targetHandle: "flow-in",
-      label: e.label || e.condition || "下一步",
+      label: e.label || e.condition || uiText("下一步"),
       data: { transitionId: e.transitionId },
       markerEnd: { type: MarkerType.ArrowClosed },
       style: {
@@ -150,7 +152,7 @@ export function FlowCanvas({
         sourceStepId: c.source,
         targetStepId: c.target,
         kind: "sequence",
-        label: nextRelationName(state.draft.business, flowId),
+        label: nextRelationName(state.draft.business, flowId, uiText("关系")),
         condition: "",
         note: "",
       });
@@ -160,13 +162,13 @@ export function FlowCanvas({
       c.sourceHandle.startsWith("header-") ||
       c.targetHandle.startsWith("header-")
     ) {
-      setNotice("创建字段关系前请展开表，或在右侧新建规则。");
+      setNotice(uiText("创建字段关系前请展开表，或在右侧新建规则。"));
       return;
     }
     setKind("mapping");
     setPending(c);
   }
-  if (!flow) return <div data-testid="flow-canvas">流程不存在</div>;
+  if (!flow) return <div data-testid="flow-canvas">{uiText("流程不存在")}</div>;
   return (
     <div
       className="studio-canvas"
@@ -185,10 +187,10 @@ export function FlowCanvas({
             const kind = JSON.parse(shape).kind as StepKind;
             if (!["step", "start", "end", "decision"].includes(kind)) return;
             const label = {
-              step: "业务步骤",
-              start: "开始",
-              end: "结束",
-              decision: "判断",
+              step: uiText("业务步骤"),
+              start: uiText("开始"),
+              end: uiText("结束"),
+              decision: uiText("判断"),
             }[kind];
             let i = 1;
             while (flow.steps.some((s) => s.name === `${label} ${i}`)) i++;
@@ -206,7 +208,7 @@ export function FlowCanvas({
             if (result.ok && result.stepId)
               onSelect?.({ kind: "step", id: result.stepId });
           } catch {
-            setNotice("无法读取节点数据");
+            setNotice(uiText("无法读取节点数据"));
           }
           return;
         }
@@ -226,7 +228,7 @@ export function FlowCanvas({
                 pos.y < s.y + s.h,
             );
           if (!step) {
-            setNotice("请把表拖入业务步骤框内。");
+            setNotice(uiText("请把表拖入业务步骤框内。"));
             return;
           }
           const result = applyOperation((s) =>
@@ -241,7 +243,7 @@ export function FlowCanvas({
           if (result.ok) onSelect?.({ kind: "ref", id: result.refId });
           else setNotice(result.error.message);
         } catch {
-          setNotice("无法读取表引用数据");
+          setNotice(uiText("无法读取表引用数据"));
         }
       }}
     >
@@ -294,39 +296,39 @@ export function FlowCanvas({
         <MiniMap pannable zoomable />
       </ReactFlow>
       <div className="studio-canvas-legend">
-        <span className="map">字段映射 →</span>
-        <span className="match">匹配条件 ┄</span>
-        <span>流程顺序 →</span>
-        <span className="trigger">条件 / 触发 ⇢</span>
+        <span className="map">{uiText("字段映射 →")}</span>
+        <span className="match">{uiText("匹配条件 ┄")}</span>
+        <span>{uiText("流程顺序 →")}</span>
+        <span className="trigger">{uiText("条件 / 触发 ⇢")}</span>
       </div>
       {!flow.steps.length && (
         <div className="studio-canvas-empty">
-          从左侧添加或拖入开始、业务步骤、判断和结束节点
+          {uiText("从左侧添加或拖入开始、业务步骤、判断和结束节点")}
         </div>
       )}
       {notice && (
         <div className="studio-canvas-notice" role="status">
-          {notice}
+          {uiError(notice)}
         </div>
       )}
       {pending && (
-        <Modal title="创建字段关系" onClose={() => setPending(null)}>
-          <p>连线只预填规则，应用后才加入当前流程。</p>
+        <Modal title={uiText("创建字段关系")} onClose={() => setPending(null)}>
+          <p>{uiText("连线只预填规则，应用后才加入当前流程。")}</p>
           <select
-            aria-label="关系类型"
+            aria-label={uiText("关系类型")}
             data-testid="connection-kind"
             value={kind}
             onChange={(e) => setKind(e.target.value as "mapping" | "matching")}
           >
-            <option value="mapping">字段映射 / 运算</option>
-            <option value="matching">匹配条件</option>
+            <option value="mapping">{uiText("字段映射 / 运算")}</option>
+            <option value="matching">{uiText("匹配条件")}</option>
           </select>
           <div className="studio-actions">
             <button
               data-testid="connection-cancel"
               onClick={() => setPending(null)}
             >
-              取消
+              {uiText("取消")}
             </button>
             <button
               className="primary"
@@ -347,14 +349,15 @@ export function FlowCanvas({
                   },
                   state.draft.business,
                   state.draft.catalog,
+                  uiText("关系"),
                 );
                 if (candidate) {
                   onRuleCandidate?.(candidate);
                   setPending(null);
-                } else setNotice("字段引用无效，未创建任何规则。");
+                } else setNotice(uiText("字段引用无效，未创建任何规则。"));
               }}
             >
-              继续配置
+              {uiText("继续配置")}
             </button>
           </div>
         </Modal>

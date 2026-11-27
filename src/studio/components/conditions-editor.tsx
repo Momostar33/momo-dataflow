@@ -1,9 +1,9 @@
+import { uiText, useUiLanguage } from "../i18n";
 import React from "react";
 import type { Condition, BusinessDocument } from "../contracts/business";
 import type { CatalogSnapshot } from "../contracts/catalog";
 import { FieldPicker } from "./field-picker";
 import { newStableId } from "../state/workspace-state";
-
 export interface ConditionsEditorProps {
   business: BusinessDocument;
   catalog: CatalogSnapshot;
@@ -14,7 +14,6 @@ export interface ConditionsEditorProps {
     logic: "ALL" | "ANY";
   }) => void;
 }
-
 export function ConditionsEditor({
   business,
   catalog,
@@ -22,22 +21,24 @@ export function ConditionsEditor({
   logic,
   onChange,
 }: ConditionsEditorProps) {
+  useUiLanguage();
   const handleConditionChange = (
     index: number,
     side: "left" | "right",
-    value: { refId: string; fieldId: string } | null,
+    value: {
+      refId: string;
+      fieldId: string;
+    } | null,
   ) => {
     const newConditions = conditions.map((c, i) =>
       i === index ? { ...c, [side]: value } : c,
     );
     onChange({ conditions: newConditions, logic });
   };
-
   const handleRemove = (index: number) => {
     const newConditions = conditions.filter((_, i) => i !== index);
     onChange({ conditions: newConditions, logic });
   };
-
   const handleAdd = () => {
     const newCondition: Condition = {
       id: newStableId(),
@@ -46,25 +47,23 @@ export function ConditionsEditor({
     };
     onChange({ conditions: [...conditions, newCondition], logic });
   };
-
   const handleLogicChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newLogic = e.target.value as "ALL" | "ANY";
     onChange({ conditions, logic: newLogic });
   };
-
   return (
     <section className="studio-editor-card studio-conditions">
-      <h3>匹配条件</h3>
+      <h3>{uiText("匹配条件")}</h3>
       <div style={{ marginBottom: "0.5rem" }}>
         <label>
-          条件组合:
+          {uiText("条件组合:")}
           <select
             value={logic}
             onChange={handleLogicChange}
             data-testid="condition-logic"
           >
-            <option value="ALL">全部满足（AND）</option>
-            <option value="ANY">任一满足（OR）</option>
+            <option value="ALL">{uiText("全部满足（AND）")}</option>
+            <option value="ANY">{uiText("任一满足（OR）")}</option>
           </select>
         </label>
       </div>
@@ -105,12 +104,12 @@ export function ConditionsEditor({
             className="studio-remove-condition"
             data-testid={`remove-condition-${idx}`}
           >
-            删除条件
+            {uiText("删除条件")}
           </button>
         </div>
       ))}
       <button type="button" onClick={handleAdd} data-testid="add-condition">
-        添加匹配条件
+        {uiText("添加匹配条件")}
       </button>
     </section>
   );

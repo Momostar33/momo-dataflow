@@ -1,9 +1,11 @@
+import { uiText, useUiLanguage } from "../i18n";
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 import { useWorkspace } from "../state/workspace-provider";
 import { removeReference, updateReference } from "../domain/references";
 import { Modal } from "../components/workbench-ui";
 export function ReferenceActions({ refId }: { refId: string }) {
+  useUiLanguage();
   const { state, applyOperation } = useWorkspace();
   const [confirm, setConfirm] = useState(false);
   const r = state.draft.business?.refs.find((r) => r.refId === refId);
@@ -31,7 +33,7 @@ export function ReferenceActions({ refId }: { refId: string }) {
         }
       >
         {r.collapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}{" "}
-        {r.collapsed ? "展开字段" : "折叠字段"}
+        {r.collapsed ? uiText("展开字段") : uiText("折叠字段")}
       </button>
       <button
         className="danger"
@@ -39,11 +41,16 @@ export function ReferenceActions({ refId }: { refId: string }) {
         onClick={() => setConfirm(true)}
       >
         <Trash2 size={13} />
-        移除引用
+        {uiText("移除引用")}
       </button>
       {confirm && (
-        <Modal title="移除当前表引用" onClose={() => setConfirm(false)}>
-          <p>目录中的表不会删除。会同时删除下列引用此表的字段规则：</p>
+        <Modal
+          title={uiText("移除当前表引用")}
+          onClose={() => setConfirm(false)}
+        >
+          <p>
+            {uiText("目录中的表不会删除。会同时删除下列引用此表的字段规则：")}
+          </p>
           {rules.length ? (
             <ul>
               {rules.map((rule) => (
@@ -51,14 +58,14 @@ export function ReferenceActions({ refId }: { refId: string }) {
               ))}
             </ul>
           ) : (
-            <p>没有受影响的规则。</p>
+            <p>{uiText("没有受影响的规则。")}</p>
           )}
           <div className="studio-actions">
             <button
               data-testid="reference-remove-cancel"
               onClick={() => setConfirm(false)}
             >
-              取消
+              {uiText("取消")}
             </button>
             <button
               className="danger"
@@ -70,7 +77,7 @@ export function ReferenceActions({ refId }: { refId: string }) {
                 setConfirm(false);
               }}
             >
-              确认移除
+              {uiText("确认移除")}
             </button>
           </div>
         </Modal>

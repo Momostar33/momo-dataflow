@@ -1,0 +1,287 @@
+{
+  "format": "stackrender-design-package",
+  "version": 1,
+  "packageId": "momo-dataflow-docs-showcase-v1",
+  "name": "展示示例：采购与收货 / Purchase and receiving",
+  "capturedAt": "2026-11-27T00:00:00+08:00",
+  "note": "完全虚构的公开文档示例，不含业务记录；初始包仅包含等值条件，截图中的模板和公式通过界面补充。 Entirely fictional documentation example; templates and formulas in screenshots are added through the UI.",
+  "database": {
+    "id": "12934fbf-ec3b-5109-ab0d-069965f92d9f",
+    "name": "演示设计 / Demo workspace",
+    "dialect": "mysql"
+  },
+  "tables": [
+    {
+      "id": "ef15e804-d540-5c7c-84fb-09b0016584bc",
+      "name": "demo.purchase_order",
+      "label": "采购订单",
+      "note": "纯虚构结构，仅演示业务设计 / Fictional structure for documentation only",
+      "columns": [
+        {
+          "id": "a1cd76e5-3a55-50da-ad09-059fcd093b5b",
+          "name": "id",
+          "label": "订单ID",
+          "type": "int",
+          "note": "虚构展示字段 / Fictional documentation example",
+          "primary": true,
+          "nullable": false,
+          "defaultValue": null,
+          "precision": null,
+          "scale": null,
+          "maxLength": null
+        },
+        {
+          "id": "0572810d-b7e2-5203-8a40-55d6c2b7f0a5",
+          "name": "order_no",
+          "label": "采购单号",
+          "type": "varchar",
+          "note": "虚构展示字段 / Fictional documentation example",
+          "primary": false,
+          "nullable": false,
+          "defaultValue": null,
+          "precision": null,
+          "scale": null,
+          "maxLength": 40
+        },
+        {
+          "id": "eff7e91b-18b1-57e8-bf97-0730b2245afd",
+          "name": "order_amount",
+          "label": "订单金额",
+          "type": "decimal",
+          "note": "虚构展示字段 / Fictional documentation example",
+          "primary": false,
+          "nullable": false,
+          "defaultValue": null,
+          "precision": 18,
+          "scale": 2,
+          "maxLength": null
+        }
+      ]
+    },
+    {
+      "id": "6de47f2a-c66e-57a1-a210-96df6669f1c2",
+      "name": "demo.purchase_item",
+      "label": "采购明细",
+      "note": "纯虚构结构，仅演示业务设计 / Fictional structure for documentation only",
+      "columns": [
+        {
+          "id": "db433271-34ca-5ca4-951b-e801361d017f",
+          "name": "id",
+          "label": "明细ID",
+          "type": "int",
+          "note": "虚构展示字段 / Fictional documentation example",
+          "primary": true,
+          "nullable": false,
+          "defaultValue": null,
+          "precision": null,
+          "scale": null,
+          "maxLength": null
+        },
+        {
+          "id": "93d313c9-269e-54e5-8a6a-04469bbb76df",
+          "name": "order_id",
+          "label": "订单ID",
+          "type": "int",
+          "note": "虚构展示字段 / Fictional documentation example",
+          "primary": false,
+          "nullable": false,
+          "defaultValue": null,
+          "precision": null,
+          "scale": null,
+          "maxLength": null
+        },
+        {
+          "id": "650a813e-0f03-5026-bc10-81a3e0150708",
+          "name": "unit_price",
+          "label": "采购单价",
+          "type": "decimal",
+          "note": "虚构展示字段 / Fictional documentation example",
+          "primary": false,
+          "nullable": false,
+          "defaultValue": null,
+          "precision": 18,
+          "scale": 2,
+          "maxLength": null
+        },
+        {
+          "id": "bc6d2ebc-7708-5995-953b-bded5e5c4fc2",
+          "name": "quantity",
+          "label": "采购数量",
+          "type": "int",
+          "note": "虚构展示字段 / Fictional documentation example",
+          "primary": false,
+          "nullable": false,
+          "defaultValue": null,
+          "precision": null,
+          "scale": null,
+          "maxLength": null
+        },
+        {
+          "id": "6c9cdb78-8f5b-57e6-b1e4-4ba01ea5f193",
+          "name": "line_amount",
+          "label": "明细金额",
+          "type": "decimal",
+          "note": "虚构展示字段 / Fictional documentation example",
+          "primary": false,
+          "nullable": false,
+          "defaultValue": null,
+          "precision": 18,
+          "scale": 2,
+          "maxLength": null
+        }
+      ]
+    },
+    {
+      "id": "80e582dc-f82a-50b3-b6a5-700d21730eff",
+      "name": "demo.receipt_item",
+      "label": "收货明细",
+      "note": "纯虚构结构，仅演示业务设计 / Fictional structure for documentation only",
+      "columns": [
+        {
+          "id": "9de8679e-1e86-5d1c-9e09-3ed80e432eff",
+          "name": "id",
+          "label": "收货ID",
+          "type": "int",
+          "note": "虚构展示字段 / Fictional documentation example",
+          "primary": true,
+          "nullable": false,
+          "defaultValue": null,
+          "precision": null,
+          "scale": null,
+          "maxLength": null
+        },
+        {
+          "id": "7b3dea7d-ff18-5cd7-a707-31ff281c5b12",
+          "name": "purchase_item_id",
+          "label": "采购明细ID",
+          "type": "int",
+          "note": "虚构展示字段 / Fictional documentation example",
+          "primary": false,
+          "nullable": false,
+          "defaultValue": null,
+          "precision": null,
+          "scale": null,
+          "maxLength": null
+        },
+        {
+          "id": "83ebe243-8400-5b35-b92a-f47acf9f9e74",
+          "name": "received_quantity",
+          "label": "收货数量",
+          "type": "int",
+          "note": "虚构展示字段 / Fictional documentation example",
+          "primary": false,
+          "nullable": false,
+          "defaultValue": null,
+          "precision": null,
+          "scale": null,
+          "maxLength": null
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "flowId": "dea0687c-51d7-562e-858a-a05c33ceaa60",
+      "databaseId": "12934fbf-ec3b-5109-ab0d-069965f92d9f",
+      "name": "采购与收货 / Purchasing",
+      "note": "从采购订单到分批收货，只说明关系，不运行业务。 Fictional descriptive flow.",
+      "steps": [
+        {
+          "stepId": "f935c109-1a99-59b6-a891-bc3fb425778f",
+          "name": "01 采购登记",
+          "note": "管理订单与明细 / Purchase order and items",
+          "x": 0,
+          "y": 0,
+          "w": 660,
+          "h": 350,
+          "kind": "step"
+        },
+        {
+          "stepId": "6d3e85cc-76bb-5334-944a-cc1e6fa0f005",
+          "name": "02 收货登记",
+          "note": "收货记录关联采购明细 / Receipts reference purchase items",
+          "x": 760,
+          "y": 0,
+          "w": 340,
+          "h": 350,
+          "kind": "step"
+        }
+      ]
+    }
+  ],
+  "refs": [
+    {
+      "refId": "ebae82e0-f287-5bdc-a498-778592c342d9",
+      "flowId": "dea0687c-51d7-562e-858a-a05c33ceaa60",
+      "stepId": "f935c109-1a99-59b6-a891-bc3fb425778f",
+      "tableId": "ef15e804-d540-5c7c-84fb-09b0016584bc",
+      "x": 20,
+      "y": 65,
+      "collapsed": false
+    },
+    {
+      "refId": "ba84f950-5874-5db4-9141-05dc70d8e7c9",
+      "flowId": "dea0687c-51d7-562e-858a-a05c33ceaa60",
+      "stepId": "f935c109-1a99-59b6-a891-bc3fb425778f",
+      "tableId": "6de47f2a-c66e-57a1-a210-96df6669f1c2",
+      "x": 345,
+      "y": 65,
+      "collapsed": false
+    },
+    {
+      "refId": "eb55ba94-e371-5d4e-a949-14459f4a3e30",
+      "flowId": "dea0687c-51d7-562e-858a-a05c33ceaa60",
+      "stepId": "6d3e85cc-76bb-5334-944a-cc1e6fa0f005",
+      "tableId": "80e582dc-f82a-50b3-b6a5-700d21730eff",
+      "x": 20,
+      "y": 65,
+      "collapsed": false
+    }
+  ],
+  "rules": [
+    {
+      "ruleId": "d9ffe33a-ce71-5cf8-807c-740eccca8111",
+      "flowId": "dea0687c-51d7-562e-858a-a05c33ceaa60",
+      "name": "关系1：订单与明细",
+      "note": "只说明业务关联，不执行 / Descriptive relation only",
+      "logic": "ALL",
+      "conditions": [
+        {
+          "id": "dc951a93-8425-5ad2-b965-81cd16f3a263",
+          "left": {
+            "refId": "ebae82e0-f287-5bdc-a498-778592c342d9",
+            "fieldId": "a1cd76e5-3a55-50da-ad09-059fcd093b5b"
+          },
+          "right": {
+            "refId": "ba84f950-5874-5db4-9141-05dc70d8e7c9",
+            "fieldId": "93d313c9-269e-54e5-8a6a-04469bbb76df"
+          }
+        }
+      ],
+      "mappings": []
+    },
+    {
+      "ruleId": "c5fea299-c796-5311-b4de-d5e666ccf932",
+      "flowId": "dea0687c-51d7-562e-858a-a05c33ceaa60",
+      "name": "关系2：采购与收货",
+      "note": "只说明业务关联，不执行 / Descriptive relation only",
+      "logic": "ALL",
+      "conditions": [
+        {
+          "id": "6ae8bc06-9161-5b1b-90d7-59e8aa64e51e",
+          "left": {
+            "refId": "ba84f950-5874-5db4-9141-05dc70d8e7c9",
+            "fieldId": "db433271-34ca-5ca4-951b-e801361d017f"
+          },
+          "right": {
+            "refId": "eb55ba94-e371-5d4e-a949-14459f4a3e30",
+            "fieldId": "7b3dea7d-ff18-5cd7-a707-31ff281c5b12"
+          }
+        }
+      ],
+      "mappings": []
+    }
+  ],
+  "relationships": [],
+  "indexes": []
+}

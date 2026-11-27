@@ -1,7 +1,7 @@
+import { uiText, useUiLanguage } from "../i18n";
 import { useState, useCallback } from "react";
 import { Save, Loader2 } from "lucide-react";
 import { useWorkspace } from "../state/workspace-provider";
-
 /**
  * SaveStatus displays a button to trigger a workspace save and a status
  * indicator that reflects the current save state:
@@ -14,9 +14,9 @@ import { useWorkspace } from "../state/workspace-provider";
  * dirty flag, last error, and the `save` operation.
  */
 export function SaveStatus() {
+  useUiLanguage();
   const ctx = useWorkspace();
   const [saving, setSaving] = useState(false);
-
   const handleSave = useCallback(() => {
     setSaving(true);
     ctx
@@ -26,20 +26,17 @@ export function SaveStatus() {
       })
       .finally(() => setSaving(false));
   }, [ctx]);
-
   const { isDirty, lastSaveError } = ctx;
-
   let statusText: string;
   if (saving) {
-    statusText = "保存中";
+    statusText = uiText("保存中");
   } else if (lastSaveError) {
-    statusText = "保存失败";
+    statusText = uiText("保存失败");
   } else if (isDirty) {
-    statusText = "已修改";
+    statusText = uiText("已修改");
   } else {
-    statusText = "已保存";
+    statusText = uiText("已保存");
   }
-
   return (
     <div
       data-testid="save-status"
@@ -56,7 +53,7 @@ export function SaveStatus() {
         ) : (
           <Save size={13} />
         )}{" "}
-        保存
+        {uiText("保存")}
       </button>
       <span
         className={

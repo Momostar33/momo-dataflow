@@ -1,3 +1,4 @@
+import { getUiLanguage, uiText, useUiLanguage } from "../i18n";
 import { scopeDesignSnapshot } from "../domain/design-scope";
 import { useState, useMemo } from "react";
 import { useStudioNavigation } from "../components/studio-shell";
@@ -6,7 +7,6 @@ import { useWorkspace } from "../state/workspace-provider";
 import { deriveOverview } from "./derive-overview";
 import type { OverviewNode } from "./derive-overview";
 import ReadonlyGraph from "./readonly-graph";
-
 /**
  * Overview page – read‑only graph view of tables and business edges.
  *
@@ -16,25 +16,22 @@ import ReadonlyGraph from "./readonly-graph";
  * - All UI elements use data-testid attributes as required.
  */
 export function OverviewPage() {
+  useUiLanguage();
   const { state } = useWorkspace();
   const { go: navigate, databaseId } = useStudioNavigation();
   const snapshot = useMemo(
     () => scopeDesignSnapshot(state.lastSavedSnapshot, databaseId),
     [state.lastSavedSnapshot, databaseId],
   );
-
   // Derive full graph once per snapshot change
   const { nodes: allNodes, edges: allEdges } = useMemo(
     () => (snapshot ? deriveOverview(snapshot) : { nodes: [], edges: [] }),
     [snapshot],
   );
-
   // Flow filter state
   const [selectedFlowId, setSelectedFlowId] = useState<string>("");
-
   // Table selection state
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
-
   // Compute filtered nodes based on selected flow
   const filteredNodes = useMemo(() => {
     if (!selectedFlowId) return allNodes;
@@ -44,22 +41,18 @@ export function OverviewPage() {
     const refTableIds = new Set(flowRefs?.map((r) => r.tableId) ?? []);
     return allNodes.filter((n) => refTableIds.has(n.tableId));
   }, [selectedFlowId, allNodes, snapshot]);
-
   // Compute filtered edges based on selected flow
   const filteredEdges = useMemo(() => {
     if (!selectedFlowId) return allEdges;
     return allEdges.filter((e) => e.flowIds.includes(selectedFlowId));
   }, [selectedFlowId, allEdges]);
-
   // Compute reachable set when a table is selected
   const reachableNodes = useMemo(() => {
     if (!selectedTableId) return filteredNodes;
     const nodeMap = new Map<string, OverviewNode>();
     filteredNodes.forEach((n) => nodeMap.set(n.tableId, n));
-
     const visited = new Set<string>();
     const stack: string[] = [selectedTableId];
-
     while (stack.length) {
       const id = stack.pop()!;
       if (!visited.has(id)) {
@@ -75,10 +68,8 @@ export function OverviewPage() {
         });
       }
     }
-
     return filteredNodes.filter((n) => visited.has(n.tableId));
   }, [selectedTableId, filteredNodes, filteredEdges]);
-
   // Edges to display based on reachable nodes
   const reachableEdges = useMemo(() => {
     const nodeSet = new Set(reachableNodes.map((n) => n.tableId));
@@ -86,30 +77,29 @@ export function OverviewPage() {
       (e) => nodeSet.has(e.sourceTableId) && nodeSet.has(e.targetTableId),
     );
   }, [reachableNodes, filteredEdges]);
-
   // Handle table click
   const onTableClick = (tableId: string) => {
     setSelectedTableId((prev) => (prev === tableId ? null : tableId));
   };
-
   // Build flow options for select
   const flowOptions = useMemo(() => {
     const flows = snapshot?.business?.flows ?? [];
     return [
-      { value: "", label: "全部业务流程" },
+      { value: "", label: uiText("全部业务流程") },
       ...flows.map((f) => ({ value: f.flowId, label: f.name })),
     ];
-  }, [snapshot]);
-
+  }, [snapshot, getUiLanguage()]);
   return (
     <div data-testid="overview-root" className="studio-overview-workspace">
       <SidePanel initial={270}>
-        <h3>关系总览</h3>
+        <h3>{uiText("关系总览")}</h3>
         <p className="studio-help">
-          只读最近成功保存的快照。点击表查看其上下游，在具体流程中修改。
+          {uiText(
+            "只读最近成功保存的快照。点击表查看其上下游，在具体流程中修改。",
+          )}
         </p>
         <div>
-          <label htmlFor="flow-filter">业务模块: </label>
+          <label htmlFor="flow-filter">{uiText("业务模块: ")}</label>
           <select
             id="flow-filter"
             data-testid="overview-module-filter"
@@ -138,5 +128,4 @@ export function OverviewPage() {
     </div>
   );
 }
-
 export default OverviewPage;

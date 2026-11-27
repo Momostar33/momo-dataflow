@@ -1,8 +1,8 @@
+import { uiText, useUiLanguage } from "../i18n";
 import React, { useEffect, useState } from "react";
 import type { BusinessDocument } from "../contracts/business";
 import type { CatalogSnapshot } from "../contracts/catalog";
 import type { FieldToken } from "../contracts/business";
-
 /**
  * Props for the FieldPicker component.
  *
@@ -24,7 +24,6 @@ export interface FieldPickerProps {
   refTestId?: string;
   fieldTestId?: string;
 }
-
 /**
  * FieldPicker component.
  *
@@ -53,33 +52,29 @@ export function FieldPicker({
   refTestId = "field-ref-picker",
   fieldTestId = "field-field-picker",
 }: FieldPickerProps) {
+  useUiLanguage();
   // Local state for the selected ref id (kept even when field is cleared).
   const [localRefId, setRefId] = useState<string>(value?.refId ?? "");
   const refId = fixedRefId ?? localRefId;
   // Search query for refs when >6 refs.
   const [search, setSearch] = useState<string>("");
-
   // Update local refId when the external value changes to a new ref.
   useEffect(() => {
     if (value?.refId && value.refId !== refId) {
       setRefId(value.refId);
     }
   }, [value, refId]);
-
   // Filter refs by flowId if provided.
   const allRefs = flowId
     ? business.refs.filter(
         (r: (typeof business.refs)[0]) => r.flowId === flowId,
       )
     : business.refs;
-
   // Build lookup maps for quick access.
   const flowMap = new Map<string, (typeof business.flows)[0]>();
   business.flows.forEach((f) => flowMap.set(f.flowId, f));
-
   const tableMap = new Map<string, (typeof catalog.tables)[0]>();
   catalog.tables.forEach((t) => tableMap.set(t.id, t));
-
   // Compute the list of refs to display, applying search if needed.
   const filteredRefs = allRefs.filter((r: (typeof business.refs)[0]) => {
     if (!search) return true;
@@ -91,7 +86,6 @@ export function FieldPicker({
     const parts = [table?.name, flow?.name, step?.name].filter(Boolean);
     return parts.some((p) => p?.toLowerCase().includes(search.toLowerCase()));
   });
-
   // Find the currently selected ref and its related entities.
   const selectedRef = allRefs.find(
     (r: (typeof business.refs)[0]) => r.refId === refId,
@@ -101,24 +95,20 @@ export function FieldPicker({
     : undefined;
   // const selectedFlow = selectedRef ? flowMap.get(selectedRef.flowId) : undefined;
   // const selectedStep = selectedFlow?.steps.find((s: typeof business.flows[0]["steps"][0]) => s.stepId === selectedRef?.stepId);
-
   // Fields belonging to the selected table.
   const tableFields = selectedTable
     ? catalog.fields.filter(
         (f: (typeof catalog.fields)[0]) => f.tableId === selectedTable.id,
       )
     : [];
-
   // Determine if the current field selection is valid.
   const fieldId = value?.fieldId ?? "";
   const selectedField = tableFields.find(
     (f: (typeof catalog.fields)[0]) => f.id === fieldId,
   );
   const fieldInvalid = fieldId && !selectedField;
-
   // Determine if the current ref selection is valid.
   const refInvalid = !!refId && (!selectedRef || !selectedTable);
-
   // Handlers
   const handleRefChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newRefId = e.target.value;
@@ -126,7 +116,6 @@ export function FieldPicker({
     // Reset field selection
     onChange(null);
   };
-
   const handleFieldChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newFieldId = e.target.value;
     if (!newFieldId) {
@@ -135,19 +124,19 @@ export function FieldPicker({
       onChange({ refId, fieldId: newFieldId });
     }
   };
-
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
   };
-
   // Render
   return (
-    <div className={`studio-field-picker ${fixedRefId ? "is-fixed" : "is-two-column"}`}>
+    <div
+      className={`studio-field-picker ${fixedRefId ? "is-fixed" : "is-two-column"}`}
+    >
       {!fixedRefId && filteredRefs.length > 6 && (
         <div style={{ marginBottom: "0.5rem" }}>
           <input
             type="text"
-            placeholder="搜索流程内表引用"
+            placeholder={uiText("搜索流程内表引用")}
             value={search}
             onChange={handleSearchChange}
             style={{ width: "100%" }}
@@ -157,18 +146,18 @@ export function FieldPicker({
       <div style={{ marginBottom: "0.5rem" }}>
         {fixedRefId ? (
           <div className="studio-fixed-table" title={selectedTable?.name}>
-            {selectedTable?.name ?? "表引用已失效"}
+            {selectedTable?.name ?? uiText("表引用已失效")}
           </div>
         ) : (
           <select
-            aria-label="选择关系中的表"
+            aria-label={uiText("选择关系中的表")}
             data-testid={refTestId}
             value={refId}
             onChange={handleRefChange}
             style={{ width: "100%" }}
           >
             <option value="" disabled>
-              选择步骤 / 表引用
+              {uiText("选择步骤 / 表引用")}
             </option>
             {filteredRefs.map((r: (typeof business.refs)[0]) => {
               const t = tableMap.get(r.tableId);
@@ -189,13 +178,13 @@ export function FieldPicker({
         )}
         {refInvalid && (
           <div style={{ color: "red", marginTop: "0.25rem" }}>
-            表引用已失效，请重新选择
+            {uiText("表引用已失效，请重新选择")}
           </div>
         )}
       </div>
       <div>
         <select
-          aria-label="选择字段"
+          aria-label={uiText("选择字段")}
           data-testid={fieldTestId}
           value={fieldId}
           onChange={handleFieldChange}
@@ -203,7 +192,7 @@ export function FieldPicker({
           disabled={!selectedTable}
         >
           <option value="" disabled>
-            选择字段
+            {uiText("选择字段")}
           </option>
           {tableFields.map((f: (typeof catalog.fields)[0]) => (
             <option key={f.id} value={f.id}>
@@ -213,7 +202,7 @@ export function FieldPicker({
         </select>
         {fieldInvalid && (
           <div style={{ color: "red", marginTop: "0.25rem" }}>
-            字段已失效，请重新选择
+            {uiText("字段已失效，请重新选择")}
           </div>
         )}
       </div>

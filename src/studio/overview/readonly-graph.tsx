@@ -1,3 +1,4 @@
+import { uiError, uiText, useUiLanguage } from "../i18n";
 import "@xyflow/react/dist/style.css";
 import { useMemo, useEffect, useState } from "react";
 import {
@@ -19,10 +20,15 @@ import {
   type OverviewPositions,
 } from "./overview-layout";
 type TableNode = Node<
-  { displayName: string; name: string; tableId: string },
+  {
+    displayName: string;
+    name: string;
+    tableId: string;
+  },
   "overview"
 >;
 function OverviewTableNode({ data, selected }: NodeProps<TableNode>) {
+  useUiLanguage();
   return (
     <div
       data-testid={`overview-table-${data.tableId}`}
@@ -53,6 +59,7 @@ export function ReadonlyGraph({
   onSelectTable,
   onOpenFlow,
 }: ReadonlyGraphProps) {
+  useUiLanguage();
   const layoutKey = JSON.stringify({
     nodes: nodes.map((n) => n.tableId).sort(),
     edges: edges.map((e) => [e.sourceTableId, e.targetTableId, e.kind]).sort(),
@@ -79,7 +86,7 @@ export function ReadonlyGraph({
                 { x: (i % 3) * 380, y: Math.floor(i / 3) * 160 },
               ]),
             ),
-            error: "自动排布暂时失败，已使用简化布局。",
+            error: uiText("自动排布暂时失败，已使用简化布局。"),
           });
       });
     return () => {
@@ -123,13 +130,13 @@ export function ReadonlyGraph({
     [edges, layout.positions],
   );
   const label = (id: string) =>
-    nodes.find((n) => n.tableId === id)?.displayName ?? "未知表";
+    nodes.find((n) => n.tableId === id)?.displayName ?? uiText("未知表");
   return (
     <div className="studio-readonly-layout" data-testid="readonly-graph">
       <div className="studio-overview-canvas" aria-busy={!ready}>
         {!ready && (
           <div className="studio-canvas-empty" role="status">
-            正在自动排布…
+            {uiText("正在自动排布…")}
           </div>
         )}
         {ready && (
@@ -152,25 +159,27 @@ export function ReadonlyGraph({
         )}
         {ready && layout.error && (
           <p className="studio-canvas-notice" role="status">
-            {layout.error}
+            {uiError(layout.error)}
           </p>
         )}
         {ready && !nodes.length && (
           <div className="studio-canvas-empty">
-            尚无已保存的表关系。在业务流程中添加表与字段规则后保存。
+            {uiText("尚无已保存的表关系。在业务流程中添加表与字段规则后保存。")}
           </div>
         )}
       </div>
       <aside className="studio-overview-relations">
         <div className="studio-properties-title">
-          {selectedTableId ? "此表的上下游" : "表关联与业务模块"}
+          {selectedTableId
+            ? uiText("此表的上下游")
+            : uiText("表关联与业务模块")}
         </div>
         <p className="studio-help">
-          仅展示表，不展开字段。进入所属流程编辑关系。
+          {uiText("仅展示表，不展开字段。进入所属流程编辑关系。")}
         </p>
         {selectedTableId && (
           <button onClick={() => onSelectTable?.(selectedTableId)}>
-            查看关联表
+            {uiText("查看关联表")}
           </button>
         )}
         {edges.map((e) => (
@@ -183,7 +192,11 @@ export function ReadonlyGraph({
               {label(e.sourceTableId)} {e.kind === "mapping" ? "→" : "↔"}{" "}
               {label(e.targetTableId)}
             </strong>
-            <small>{e.kind === "mapping" ? "映射 / 公式" : "匹配条件"}</small>
+            <small>
+              {e.kind === "mapping"
+                ? uiText("映射 / 公式")
+                : uiText("匹配条件")}
+            </small>
             {e.flowIds.map((id, i) => (
               <button
                 key={id}
@@ -191,12 +204,14 @@ export function ReadonlyGraph({
                 onClick={() => onOpenFlow?.(id)}
               >
                 <ExternalLink size={12} />
-                {e.flowNames[i] || "业务流程"}
+                {e.flowNames[i] || uiText("业务流程")}
               </button>
             ))}
           </section>
         ))}
-        {!edges.length && <p className="studio-help">当前范围没有表关联。</p>}
+        {!edges.length && (
+          <p className="studio-help">{uiText("当前范围没有表关联。")}</p>
+        )}
       </aside>
     </div>
   );

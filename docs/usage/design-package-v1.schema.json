@@ -1,0 +1,610 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Momostar33/momo-dataflow/main/docs/usage/design-package-v1.schema.json",
+  "title": "Momo DataFlow importable design package v1",
+  "description": "Conservative generation schema. Stable unique IDs, cross-entity endpoints, type compatibility, total field count and workspace conflicts must additionally pass the native planDesignImport validator. Formulas and transitions are not importable in v1.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "stackrender-design-package"
+    },
+    "version": {
+      "const": 1
+    },
+    "packageId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 19999,
+      "pattern": "\\S"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 19999,
+      "pattern": "\\S"
+    },
+    "capturedAt": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 19999,
+      "pattern": "\\S",
+      "description": "Capture time of source metadata; ISO 8601 is recommended but not required by the importer."
+    },
+    "note": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 19999,
+      "pattern": "\\S"
+    },
+    "database": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 19999,
+          "pattern": "\\S"
+        },
+        "dialect": {
+          "const": "mysql"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "dialect"
+      ]
+    },
+    "tables": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/table"
+      },
+      "minItems": 0,
+      "maxItems": 2000
+    },
+    "flows": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/flow"
+      },
+      "minItems": 0,
+      "maxItems": 500
+    },
+    "refs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/reference"
+      },
+      "minItems": 0,
+      "maxItems": 50000
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/rule"
+      },
+      "minItems": 0,
+      "maxItems": 10000
+    },
+    "relationships": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/relationship"
+      },
+      "minItems": 0,
+      "maxItems": 50000
+    },
+    "indexes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/index"
+      },
+      "minItems": 0,
+      "maxItems": 50000
+    }
+  },
+  "required": [
+    "format",
+    "version",
+    "packageId",
+    "name",
+    "capturedAt",
+    "note",
+    "database",
+    "tables",
+    "flows",
+    "refs",
+    "rules",
+    "relationships",
+    "indexes"
+  ],
+  "definitions": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+    },
+    "column": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 19999,
+          "pattern": "\\S"
+        },
+        "label": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 19999,
+          "pattern": "\\S"
+        },
+        "note": {
+          "type": "string"
+        },
+        "primary": {
+          "type": "boolean"
+        },
+        "nullable": {
+          "type": "boolean"
+        },
+        "defaultValue": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "precision": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "scale": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "maxLength": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "unique": {
+          "type": "boolean"
+        },
+        "unsigned": {
+          "type": "boolean"
+        },
+        "autoIncrement": {
+          "type": "boolean"
+        },
+        "collate": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "type",
+        "note",
+        "primary",
+        "nullable",
+        "defaultValue",
+        "precision",
+        "scale",
+        "maxLength"
+      ]
+    },
+    "table": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 19999,
+          "pattern": "\\S"
+        },
+        "label": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/column"
+          },
+          "minItems": 1,
+          "maxItems": 50000
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "label",
+        "note",
+        "columns"
+      ]
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stepId": {
+          "$ref": "#/definitions/uuid"
+        },
+        "kind": {
+          "const": "step"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 19999,
+          "pattern": "\\S"
+        },
+        "note": {
+          "type": "string"
+        },
+        "x": {
+          "type": "number",
+          "minimum": -1.7976931348623157e+308,
+          "maximum": 1.7976931348623157e+308
+        },
+        "y": {
+          "type": "number",
+          "minimum": -1.7976931348623157e+308,
+          "maximum": 1.7976931348623157e+308
+        },
+        "w": {
+          "type": "number",
+          "minimum": -1.7976931348623157e+308,
+          "maximum": 1.7976931348623157e+308,
+          "exclusiveMinimum": 0
+        },
+        "h": {
+          "type": "number",
+          "minimum": -1.7976931348623157e+308,
+          "maximum": 1.7976931348623157e+308,
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "stepId",
+        "name",
+        "note",
+        "x",
+        "y",
+        "w",
+        "h"
+      ]
+    },
+    "flow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "flowId": {
+          "$ref": "#/definitions/uuid"
+        },
+        "databaseId": {
+          "$ref": "#/definitions/uuid"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 19999,
+          "pattern": "\\S"
+        },
+        "note": {
+          "type": "string"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/step"
+          },
+          "minItems": 0,
+          "maxItems": 50000
+        },
+        "transitions": {
+          "type": "array",
+          "maxItems": 0
+        }
+      },
+      "required": [
+        "flowId",
+        "databaseId",
+        "name",
+        "note",
+        "steps"
+      ]
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "refId": {
+          "$ref": "#/definitions/uuid"
+        },
+        "flowId": {
+          "$ref": "#/definitions/uuid"
+        },
+        "stepId": {
+          "$ref": "#/definitions/uuid"
+        },
+        "tableId": {
+          "$ref": "#/definitions/uuid"
+        },
+        "x": {
+          "type": "number",
+          "minimum": -1.7976931348623157e+308,
+          "maximum": 1.7976931348623157e+308
+        },
+        "y": {
+          "type": "number",
+          "minimum": -1.7976931348623157e+308,
+          "maximum": 1.7976931348623157e+308
+        },
+        "collapsed": {
+          "type": "boolean"
+        },
+        "visibleFieldIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/uuid"
+          },
+          "minItems": 0,
+          "maxItems": 50000
+        }
+      },
+      "required": [
+        "refId",
+        "flowId",
+        "stepId",
+        "tableId",
+        "x",
+        "y",
+        "collapsed"
+      ]
+    },
+    "fieldToken": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "refId": {
+          "$ref": "#/definitions/uuid"
+        },
+        "fieldId": {
+          "$ref": "#/definitions/uuid"
+        }
+      },
+      "required": [
+        "refId",
+        "fieldId"
+      ]
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "left": {
+          "$ref": "#/definitions/fieldToken"
+        },
+        "right": {
+          "$ref": "#/definitions/fieldToken"
+        }
+      },
+      "required": [
+        "id",
+        "left",
+        "right"
+      ]
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ruleId": {
+          "$ref": "#/definitions/uuid"
+        },
+        "flowId": {
+          "$ref": "#/definitions/uuid"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 19999,
+          "pattern": "\\S"
+        },
+        "note": {
+          "type": "string"
+        },
+        "logic": {
+          "enum": [
+            "ALL",
+            "ANY"
+          ]
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/condition"
+          },
+          "minItems": 1,
+          "maxItems": 50000
+        },
+        "mappings": {
+          "type": "array",
+          "maxItems": 0
+        }
+      },
+      "required": [
+        "ruleId",
+        "flowId",
+        "name",
+        "note",
+        "logic",
+        "conditions",
+        "mappings"
+      ]
+    },
+    "relationship": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "databaseId": {
+          "$ref": "#/definitions/uuid"
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourceTableId": {
+          "$ref": "#/definitions/uuid"
+        },
+        "sourceFieldId": {
+          "$ref": "#/definitions/uuid"
+        },
+        "targetTableId": {
+          "$ref": "#/definitions/uuid"
+        },
+        "targetFieldId": {
+          "$ref": "#/definitions/uuid"
+        },
+        "cardinality": {
+          "enum": [
+            "one_to_one",
+            "one_to_many",
+            "many_to_one",
+            "many_to_many"
+          ]
+        },
+        "onDelete": {
+          "enum": [
+            null,
+            "no_action",
+            "cascade",
+            "set_null",
+            "set_default",
+            "restrict"
+          ]
+        },
+        "onUpdate": {
+          "enum": [
+            null,
+            "no_action",
+            "cascade",
+            "set_null",
+            "set_default",
+            "restrict"
+          ]
+        },
+        "sourceAliasName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "targetAliasName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "createdAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "databaseId",
+        "name",
+        "sourceTableId",
+        "sourceFieldId",
+        "targetTableId",
+        "targetFieldId",
+        "cardinality",
+        "onDelete",
+        "onUpdate",
+        "sourceAliasName",
+        "targetAliasName",
+        "createdAt"
+      ]
+    },
+    "index": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "tableId": {
+          "$ref": "#/definitions/uuid"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 19999,
+          "pattern": "\\S"
+        },
+        "unique": {
+          "type": "boolean"
+        },
+        "fieldIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/uuid"
+          },
+          "minItems": 1,
+          "maxItems": 50000
+        }
+      },
+      "required": [
+        "id",
+        "tableId",
+        "name",
+        "unique",
+        "fieldIds"
+      ]
+    }
+  }
+}

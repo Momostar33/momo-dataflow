@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.1.0-beta.4 — 2026-11-27
+
+- Add Chinese/English workbench UI with a persisted header selector, translated system messages and preserved user content/open drafts. Existing i18next is reused; no new dependencies.
+- Use one numbering sequence for Chinese/English default relationship names without renaming saved designs.
+- Add English README/user/JSON guides and five real screenshots using fictional metadata; retain and clarify StackRender attribution and AGPL/source notices.
+- Add an agent guide/task template, JSON Schema, showcase package and read-only `validate:design` command using the native import planner.
+- Validation: 352 tests in 28 files, public-entry typecheck, production build and reproducible install passed; npm audit reports 0 known advisories. Browser checks cover both languages, preference reload, private editor drafts, template bulk application, formulas, overview and English legal/source notices. Existing bundle/deprecation warnings remain.
+
+See [release notes](docs/releases/v0.1.0-beta.4.md) and [validation](docs/VALIDATION.md). Prior version records are preserved.
+
 ## 0.1.0-beta.3 — 2026-11-27
 
 - Update react-router-dom/react-router from 6.30.6 to 7.18.7 to fix the remaining advisories; npm audit reports 0 known vulnerabilities for the final lockfile.
@@ -8,7 +18,7 @@
 - Preserve the beta.2 validation snapshot separately.
 - Validation: reproducible npm ci, 336 tests in 24 files, public-entry typecheck and production bundle passed. Browser regression covers retained designs, navigation confirmation/cancel/save-and-leave, flow deep-link reload, overview, attribution and removed ERD redirect. Bundle/deprecation warnings remain; zero known dependency advisories does not mean full security or business acceptance.
 
-See [beta.3 release notes](docs/releases/v0.1.0-beta.3.md) and [validation](docs/VALIDATION.md).
+See [beta.3 release notes](docs/releases/v0.1.0-beta.3.md) and [beta.3 validation](docs/releases/validation-v0.1.0-beta.3.md).
 
 ## 0.1.0-beta.2 — 2026-11-27
 

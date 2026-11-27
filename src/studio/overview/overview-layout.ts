@@ -1,11 +1,16 @@
+import { uiText } from "../i18n";
 import ELK from "elkjs/lib/elk.bundled.js";
 import type { OverviewNode, OverviewEdge } from "./derive-overview";
-
 export const OVERVIEW_TABLE_WIDTH = 240;
 export const OVERVIEW_TABLE_HEIGHT = 72;
-export type OverviewPositions = Record<string, { x: number; y: number }>;
+export type OverviewPositions = Record<
+  string,
+  {
+    x: number;
+    y: number;
+  }
+>;
 const elk = new ELK();
-
 /** Layout projection only: never writes the business document or catalog coordinates. */
 export async function layoutOverview(
   nodes: readonly OverviewNode[],
@@ -13,7 +18,13 @@ export async function layoutOverview(
 ): Promise<OverviewPositions> {
   if (!nodes.length) return {};
   const ids = new Set(nodes.map((n) => n.tableId));
-  const links = new Map<string, { source: string; target: string }>();
+  const links = new Map<
+    string,
+    {
+      source: string;
+      target: string;
+    }
+  >();
   const pairKey = (source: string, target: string) =>
     JSON.stringify([source, target]);
   const validEdges = edges.filter(
@@ -63,7 +74,7 @@ export async function layoutOverview(
     nodes.map((n) => {
       const placed = result.children?.find((p) => p.id === n.tableId);
       if (!placed || !Number.isFinite(placed.x) || !Number.isFinite(placed.y))
-        throw Error("自动排布返回了无效位置");
+        throw Error(uiText("自动排布返回了无效位置"));
       return [n.tableId, { x: placed.x!, y: placed.y! }];
     }),
   );

@@ -1,3 +1,4 @@
+import { uiText, useUiLanguage } from "../i18n";
 import { useState, useRef, useEffect, type ReactNode } from "react";
 import { X } from "lucide-react";
 export function SidePanel({
@@ -7,15 +8,19 @@ export function SidePanel({
   children: ReactNode;
   initial?: number;
 }) {
+  useUiLanguage();
   const [width, setWidth] = useState(initial),
-    start = useRef<{ x: number; width: number } | null>(null);
+    start = useRef<{
+      x: number;
+      width: number;
+    } | null>(null);
   return (
     <aside className="studio-side" style={{ width }}>
       {children}
       <div
         role="separator"
         tabIndex={0}
-        aria-label="调整侧栏宽度"
+        aria-label={uiText("调整侧栏宽度")}
         aria-valuenow={width}
         aria-valuemin={220}
         aria-valuemax={520}
@@ -48,6 +53,7 @@ export function SidePanel({
   );
 }
 export function Empty({ children }: { children: ReactNode }) {
+  useUiLanguage();
   return <div className="studio-empty">{children}</div>;
 }
 export function Modal({
@@ -59,6 +65,7 @@ export function Modal({
   children: ReactNode;
   onClose: () => void;
 }) {
+  useUiLanguage();
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
@@ -103,7 +110,7 @@ export function Modal({
       >
         <div className="studio-modal-title">
           <h3>{title}</h3>
-          <button aria-label="关闭" onClick={onClose}>
+          <button aria-label={uiText("关闭")} onClick={onClose}>
             <X size={16} />
           </button>
         </div>
@@ -112,9 +119,9 @@ export function Modal({
     </div>
   );
 }
-
 /** Right-hand inspector. Folding keeps private form components mounted. */
 export function PropertiesPanel({ children }: { children: ReactNode }) {
+  useUiLanguage();
   const preference = "stackrender.properties-width";
   const [width, setWidth] = useState<number | null>(() => {
     try {
@@ -140,7 +147,10 @@ export function PropertiesPanel({ children }: { children: ReactNode }) {
     measure();
     return () => observer.disconnect();
   }, []);
-  const start = useRef<{ x: number; width: number } | null>(null);
+  const start = useRef<{
+    x: number;
+    width: number;
+  } | null>(null);
   useEffect(() => {
     try {
       if (width === null) localStorage.removeItem(preference);
@@ -161,12 +171,12 @@ export function PropertiesPanel({ children }: { children: ReactNode }) {
           role="separator"
           tabIndex={0}
           aria-orientation="vertical"
-          aria-label="调整右侧属性栏宽度"
+          aria-label={uiText("调整右侧属性栏宽度")}
           aria-valuenow={measuredWidth}
           aria-valuemin={280}
           aria-valuemax={640}
           className="studio-properties-resize"
-          title="拖动调整宽度，双击恢复默认"
+          title={uiText("拖动调整宽度，双击恢复默认")}
           onDoubleClick={() => setWidth(null)}
           onKeyDown={(e) => {
             if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
@@ -208,9 +218,11 @@ export function PropertiesPanel({ children }: { children: ReactNode }) {
       )}
       <button
         className="studio-properties-toggle"
-        aria-label={collapsed ? "展开右侧属性栏" : "收起右侧属性栏"}
+        aria-label={
+          collapsed ? uiText("展开右侧属性栏") : uiText("收起右侧属性栏")
+        }
         aria-expanded={!collapsed}
-        title={collapsed ? "展开属性栏" : "收起属性栏"}
+        title={collapsed ? uiText("展开属性栏") : uiText("收起属性栏")}
         onClick={() => setCollapsed((value) => !value)}
       >
         {collapsed ? "‹" : "›"}

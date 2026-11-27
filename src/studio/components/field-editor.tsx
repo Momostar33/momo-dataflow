@@ -1,3 +1,4 @@
+import { uiError, uiText, useUiLanguage } from "../i18n";
 import { useState, useEffect } from "react";
 import { useMomoWorkspace } from "../state/momo-view";
 import { addField } from "../domain/catalog-fields";
@@ -9,7 +10,6 @@ import { validateFieldTypeChange } from "../domain/rule-validation";
 import { FieldTemplatePicker } from "./field-template-picker";
 import { deepFreeze } from "../state/workspace-state";
 import { emptyBusinessDocument } from "../contracts/business";
-
 /**
  * Props for {@link FieldEditor}.
  *
@@ -24,7 +24,6 @@ export interface FieldEditorProps {
   onApplied?: (id: string) => void;
   onCancel?: () => void;
 }
-
 /**
  * FieldEditor renders a form for creating or editing a field.
  *
@@ -55,15 +54,14 @@ export function FieldEditor({
   onApplied,
   onCancel,
 }: FieldEditorProps): JSX.Element {
+  useUiLanguage();
   const ctx = useMomoWorkspace();
   const { state } = ctx;
   const { catalog } = state.draft;
-
   // Find existing field if editing
   const existingField = fieldId
     ? catalog.fields.find((f) => f.id === fieldId)
     : undefined;
-
   // Local form state
   const [name, setName] = useState(existingField?.name ?? "");
   const [displayName, setDisplayName] = useState(
@@ -92,13 +90,10 @@ export function FieldEditor({
   const [defaultValue, setDefaultValue] = useState<string | null>(
     existingField?.defaultValue ?? null,
   );
-
   const [error, setError] = useState<string | null>(null);
-
   const assignment = state.draft.business?.assignments.find(
     (a) => a.fieldId === fieldId,
   );
-
   // Template selection state
   const [selectedTemplateId, setSelectedTemplateId] = useState<
     string | undefined
@@ -106,7 +101,6 @@ export function FieldEditor({
   const [selectedTemplateVersion, setSelectedTemplateVersion] = useState<
     number | undefined
   >(assignment?.appliedVersion);
-
   // Reset form when fieldId changes
   useEffect(() => {
     const f = fieldId
@@ -129,7 +123,6 @@ export function FieldEditor({
     setSelectedTemplateVersion(assignment?.appliedVersion);
     setError(null);
   }, [fieldId, catalog.fields, state.draft.metadata]);
-
   const handleApply = () => {
     // Determine if type validation is needed
     let typeValidationNeeded = false;
@@ -141,7 +134,6 @@ export function FieldEditor({
         scale !== existingField.scale ||
         maxLength !== existingField.maxLength;
     }
-
     if (typeValidationNeeded) {
       const finalChange = {
         fieldId: fieldId ?? "",
@@ -159,7 +151,6 @@ export function FieldEditor({
         return;
       }
     }
-
     // Validate selected template existence
     if (selectedTemplateId && selectedTemplateVersion !== undefined) {
       const tmpl = state.draft.business?.templates.find(
@@ -177,7 +168,6 @@ export function FieldEditor({
         return;
       }
     }
-
     // Prepare patch changes
     const patchChanges: FieldPatchChanges = {
       name,
@@ -192,7 +182,6 @@ export function FieldEditor({
       unique,
       defaultValue,
     };
-
     // Perform operation in a single callback
     const result = ctx.applyOperation((state) => {
       if (!fieldId) {
@@ -220,7 +209,6 @@ export function FieldEditor({
           },
         });
         if (!patchResult.ok) return patchResult;
-
         // Assignment handling
         if (selectedTemplateId && selectedTemplateVersion !== undefined) {
           const existingAssignments =
@@ -246,7 +234,6 @@ export function FieldEditor({
           onApplied?.(newFieldId);
           return { ok: true, state: newState };
         }
-
         onApplied?.(newFieldId);
         return { ok: true, state: patchResult.state };
       } else {
@@ -256,7 +243,6 @@ export function FieldEditor({
           changes: patchChanges,
         });
         if (!patchResult.ok) return patchResult;
-
         if (
           assignment &&
           !selectedTemplateId &&
@@ -278,7 +264,6 @@ export function FieldEditor({
             state: { ...patchResult.state, draft: nextDraft },
           };
         }
-
         // Assignment handling
         if (selectedTemplateId && selectedTemplateVersion !== undefined) {
           const existingAssignments =
@@ -315,14 +300,12 @@ export function FieldEditor({
           onApplied?.(fieldId);
           return { ok: true, state: newState };
         }
-
         onApplied?.(fieldId);
         return { ok: true, state: patchResult.state };
       }
     });
     if (!result.ok) setError(result.error.message);
   };
-
   // Build type options
   const typeOptions = [
     { value: "", label: "None" },
@@ -330,7 +313,6 @@ export function FieldEditor({
       .filter((dt) => dt.id !== null)
       .map((dt) => ({ value: dt.id!, label: dt.name ?? dt.type })),
   ];
-
   // Include current unknown type if not in list
   if (typeId && !catalog.dataTypes.some((dt) => dt.id === typeId)) {
     const current = catalog.dataTypes.find((dt) => dt.id === typeId);
@@ -338,14 +320,13 @@ export function FieldEditor({
       typeOptions.push({ value: current.id!, label: current.type });
     }
   }
-
   const handleTemplateSelect = (templateId: string, version: number) => {
     const template = state.draft.business?.templates.find(
       (t) => t.templateId === templateId,
     );
     const defaults = template?.versions.find((v) => v.version === version);
     if (!defaults) {
-      setError("字段模板版本不存在");
+      setError(uiText("字段模板版本不存在"));
       return;
     }
     setTypeId(defaults.typeId);
@@ -356,17 +337,16 @@ export function FieldEditor({
     setSelectedTemplateVersion(version);
     setError(null);
   };
-
   return (
     <div
       data-testid="edit-field"
       style={{ border: "1px solid #ddd", padding: "8px", marginTop: "8px" }}
     >
-      <h4>{fieldId ? "编辑字段" : "新建字段"}</h4>
-      {error && <div style={{ color: "red" }}>{error}</div>}
+      <h4>{fieldId ? uiText("编辑字段") : uiText("新建字段")}</h4>
+      {error && <div style={{ color: "red" }}>{uiError(error)}</div>}
       <div>
         <label>
-          技术字段名:
+          {uiText("技术字段名:")}
           <input
             data-testid="field-name"
             value={name}
@@ -376,7 +356,7 @@ export function FieldEditor({
       </div>
       <div>
         <label>
-          说明名称:
+          {uiText("说明名称:")}
           <input
             data-testid="field-label"
             value={displayName}
@@ -386,7 +366,7 @@ export function FieldEditor({
       </div>
       <div>
         <label>
-          备注:
+          {uiText("备注:")}
           <input
             data-testid="field-note"
             value={note}
@@ -396,7 +376,7 @@ export function FieldEditor({
       </div>
       <div>
         <label>
-          技术类型:
+          {uiText("技术类型:")}
           <select
             data-testid="field-type"
             disabled={!!selectedTemplateId}
@@ -413,7 +393,7 @@ export function FieldEditor({
       </div>
       <div>
         <label>
-          总精度:
+          {uiText("总精度:")}
           <input
             data-testid="field-precision"
             disabled={!!selectedTemplateId}
@@ -427,7 +407,7 @@ export function FieldEditor({
       </div>
       <div>
         <label>
-          小数位:
+          {uiText("小数位:")}
           <input
             data-testid="field-scale"
             disabled={!!selectedTemplateId}
@@ -441,7 +421,7 @@ export function FieldEditor({
       </div>
       <div>
         <label>
-          字符长度:
+          {uiText("字符长度:")}
           <input
             data-testid="field-length"
             disabled={!!selectedTemplateId}
@@ -455,7 +435,7 @@ export function FieldEditor({
       </div>
       <div>
         <label>
-          允许为空:
+          {uiText("允许为空:")}
           <input
             type="checkbox"
             checked={nullable ?? false}
@@ -465,7 +445,7 @@ export function FieldEditor({
       </div>
       <div>
         <label>
-          主键:
+          {uiText("主键:")}
           <input
             type="checkbox"
             checked={isPrimary ?? false}
@@ -475,7 +455,7 @@ export function FieldEditor({
       </div>
       <div>
         <label>
-          唯一:
+          {uiText("唯一:")}
           <input
             type="checkbox"
             checked={unique ?? false}
@@ -485,7 +465,7 @@ export function FieldEditor({
       </div>
       <div>
         <label>
-          默认值:
+          {uiText("默认值:")}
           <input
             data-testid="field-default"
             value={defaultValue ?? ""}
@@ -495,14 +475,14 @@ export function FieldEditor({
       </div>
       <div style={{ marginTop: "8px" }}>
         <button data-testid="field-apply" onClick={handleApply}>
-          应用
+          {uiText("应用")}
         </button>
         <button
           data-testid="field-cancel"
           onClick={onCancel}
           style={{ marginLeft: "8px" }}
         >
-          取消
+          {uiText("取消")}
         </button>
       </div>
       <div style={{ marginTop: "12px" }}>
@@ -516,7 +496,9 @@ export function FieldEditor({
         />
         {selectedTemplateId && (
           <p>
-            已采用字段模板；技术类型、精度和小数位由模板统一设置。模板新版须预览确认后批量更新。
+            {uiText(
+              "已采用字段模板；技术类型、精度和小数位由模板统一设置。模板新版须预览确认后批量更新。",
+            )}
           </p>
         )}
       </div>

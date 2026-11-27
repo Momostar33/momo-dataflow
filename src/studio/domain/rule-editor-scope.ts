@@ -56,6 +56,7 @@ export function prepareScopedRule(
   snapshot: WorkspaceSnapshot,
   rule: Rule,
   allowedRefIds: readonly string[],
+  namePrefix = "关系",
 ): Rule {
   if (!allowedRefIds.length)
     throw Error("请先在画布连接字段，或选择这条关系的两张表");
@@ -64,7 +65,7 @@ export function prepareScopedRule(
     throw Error("规则只能使用当前连线对象的字段");
   const next = structuredClone(rule);
   if (!next.name.trim()) {
-    next.name = nextRelationName(snapshot.business, rule.flowId);
+    next.name = nextRelationName(snapshot.business, rule.flowId, namePrefix);
   } else next.name = next.name.trim();
   return next;
 }

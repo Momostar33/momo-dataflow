@@ -1,3 +1,4 @@
+import { uiError, uiText, useUiLanguage } from "../i18n";
 import { FieldInsertionProvider } from "./field-insertion-context";
 import { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
@@ -35,12 +36,13 @@ type TransitionDraft = Omit<FlowTransition, "transitionId"> & {
   transitionId?: string;
 };
 const shapes: [StepKind, string, typeof Layers][] = [
-  ["start", "开始", Play],
-  ["step", "业务步骤", Layers],
-  ["decision", "判断分支", Diamond],
-  ["end", "结束", Square],
+  ["start", uiText("开始"), Play],
+  ["step", uiText("业务步骤"), Layers],
+  ["decision", uiText("判断分支"), Diamond],
+  ["end", uiText("结束"), Square],
 ];
 export function FlowPage() {
+  useUiLanguage();
   const { flowId = "" } = useParams(),
     location = useLocation(),
     ctx = useWorkspace(),
@@ -82,8 +84,10 @@ export function FlowPage() {
   if (!flow)
     return (
       <Empty>
-        此流程不存在。
-        <button onClick={() => nav.go("/studio/flows")}>返回流程列表</button>
+        {uiText("此流程不存在。")}
+        <button onClick={() => nav.go("/studio/flows")}>
+          {uiText("返回流程列表")}
+        </button>
       </Empty>
     );
   const tables = ctx.state.draft.catalog.tables.filter(
@@ -139,7 +143,7 @@ export function FlowPage() {
   function attach(tableId: string) {
     const step = flow!.steps.find((s) => s.stepId === selectedStepId);
     if (!step || (step.kind ?? "step") !== "step") {
-      setError("请先选择一个业务步骤，再添加表。");
+      setError(uiText("请先选择一个业务步骤，再添加表。"));
       return;
     }
     const old = refs.find(
@@ -197,7 +201,7 @@ export function FlowPage() {
         <SidePanel initial={264}>
           <div className="studio-panel-heading">
             <button
-              aria-label="返回业务流程"
+              aria-label={uiText("返回业务流程")}
               onClick={() => nav.go("/studio/flows")}
             >
               <ArrowLeft size={15} />
@@ -205,16 +209,19 @@ export function FlowPage() {
             <div>
               <strong>{flow.name}</strong>
               <small>
-                {flow.steps.length} 个节点 · {refs.length} 处表引用
+                {flow.steps.length}
+                {uiText(" 个节点 · ")}
+                {refs.length}
+                {uiText(" 处表引用")}
               </small>
             </div>
           </div>
           <div className="studio-tabs">
             {(
               [
-                ["steps", "步骤与图形"],
-                ["tables", "参与表"],
-                ["rules", "字段规则"],
+                ["steps", uiText("步骤与图形")],
+                ["tables", uiText("参与表")],
+                ["rules", uiText("字段规则")],
               ] as const
             ).map(([id, label]) => (
               <button
@@ -229,7 +236,9 @@ export function FlowPage() {
           <div className="studio-panel-scroll">
             {tab === "steps" && (
               <>
-                <p className="studio-section-caption">添加流程节点</p>
+                <p className="studio-section-caption">
+                  {uiText("添加流程节点")}
+                </p>
                 <div className="studio-shapes">
                   {shapes.map(([kind, label, Icon]) => (
                     <button
@@ -251,10 +260,13 @@ export function FlowPage() {
                   ))}
                 </div>
                 <p className="studio-help">
-                  点击添加，或拖到画布。选中节点后在右侧编辑；节点右侧端口连接到下一节点。
+                  {uiText(
+                    "点击添加，或拖到画布。选中节点后在右侧编辑；节点右侧端口连接到下一节点。",
+                  )}
                 </p>
                 <p className="studio-section-caption">
-                  流程节点 · {flow.steps.length}
+                  {uiText("流程节点 · ")}
+                  {flow.steps.length}
                 </p>
                 {flow.steps.map((s, i) => (
                   <button
@@ -276,7 +288,8 @@ export function FlowPage() {
                       </strong>
                       <small>
                         {shapes.find((k) => k[0] === (s.kind ?? "step"))?.[1]} ·{" "}
-                        {refs.filter((r) => r.stepId === s.stepId).length} 张表
+                        {refs.filter((r) => r.stepId === s.stepId).length}
+                        {uiText(" 张表")}
                       </small>
                     </div>
                   </button>
@@ -288,13 +301,15 @@ export function FlowPage() {
                 <label className="studio-search">
                   <Search size={14} />
                   <input
-                    placeholder="搜索表名、说明或备注"
+                    placeholder={uiText("搜索表名、说明或备注")}
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
                   />
                 </label>
                 <p className="studio-help">
-                  把表拖入业务步骤框；也可选中步骤后点添加。仅引用表，不复制表定义。
+                  {uiText(
+                    "把表拖入业务步骤框；也可选中步骤后点添加。仅引用表，不复制表定义。",
+                  )}
                 </p>
                 {filtered.map((t) => (
                   <div
@@ -319,7 +334,9 @@ export function FlowPage() {
                       <small>{t.name}</small>
                     </div>
                     <button
-                      aria-label={`添加表 ${t.name}`}
+                      aria-label={uiText("添加表 {{v0}}", {
+                        v0: t.name,
+                      })}
                       disabled={!selectedStepId}
                       onClick={() => attach(t.id)}
                     >
@@ -328,7 +345,9 @@ export function FlowPage() {
                   </div>
                 ))}
                 {!filtered.length && (
-                  <Empty>当前设计库暂无匹配的表。先在表字段目录创建。</Empty>
+                  <Empty>
+                    {uiText("当前设计库暂无匹配的表。先在表字段目录创建。")}
+                  </Empty>
                 )}
               </>
             )}
@@ -344,7 +363,7 @@ export function FlowPage() {
                   }}
                 >
                   <Plus size={14} />
-                  新建字段规则
+                  {uiText("新建字段规则")}
                 </button>
                 {rules.map((r) => (
                   <button
@@ -357,14 +376,17 @@ export function FlowPage() {
                     <div>
                       <strong>{r.name}</strong>
                       <small>
-                        {r.conditions.length} 条匹配 · {r.mappings.length}{" "}
-                        行映射
+                        {r.conditions.length}
+                        {uiText(" 条匹配 · ")}
+                        {r.mappings.length} {uiText("行映射")}
                       </small>
                     </div>
                   </button>
                 ))}
                 {!rules.length && (
-                  <Empty>从字段端口连线，可预填匹配或映射规则。</Empty>
+                  <Empty>
+                    {uiText("从字段端口连线，可预填匹配或映射规则。")}
+                  </Empty>
                 )}
               </>
             )}
@@ -384,21 +406,23 @@ export function FlowPage() {
         />
         <PropertiesPanel>
           <div className="studio-properties-title">
-            <strong>属性与业务逻辑</strong>
-            <span>当前选中对象</span>
+            <strong>{uiText("属性与业务逻辑")}</strong>
+            <span>{uiText("当前选中对象")}</span>
           </div>
           <div className="studio-properties-scroll">
             {error && (
               <p role="alert" className="studio-error">
-                {error}
+                {uiError(error)}
               </p>
             )}
             {!sel && (
               <Empty>
                 <Workflow size={28} />
-                <strong>选择步骤、表或连线</strong>
+                <strong>{uiText("选择步骤、表或连线")}</strong>
                 <p>
-                  左侧添加图形与表，中间自由绘图；右侧编辑名称、条件、映射公式和说明。
+                  {uiText(
+                    "左侧添加图形与表，中间自由绘图；右侧编辑名称、条件、映射公式和说明。",
+                  )}
                 </p>
               </Empty>
             )}
@@ -430,8 +454,11 @@ export function FlowPage() {
                         ),
                     );
                     setConfirm({
-                      title: "删除节点",
-                      body: `将移除此节点、${removed.length} 处表引用、${affected.length} 条字段规则及相连流程箭头；目录中的表不会被删除。`,
+                      title: uiText("删除节点"),
+                      body: uiText(
+                        "将移除此节点、{{v0}} 处表引用、{{v1}} 条字段规则及相连流程箭头；目录中的表不会被删除。",
+                        { v0: removed.length, v1: affected.length },
+                      ),
                       action: () => {
                         const result = ctx.applyOperation((s) =>
                           deleteStep(s, {
@@ -457,10 +484,10 @@ export function FlowPage() {
                   }
                 </h3>
                 <p className="studio-help">
-                  本流程局部表引用。移除不会删除表定义。
+                  {uiText("本流程局部表引用。移除不会删除表定义。")}
                 </p>
                 <ReferenceActions refId={selectedRef.refId} />
-                <h4>画布可见字段</h4>
+                <h4>{uiText("画布可见字段")}</h4>
                 <button
                   onClick={() =>
                     ctx.applyOperation((s) =>
@@ -473,7 +500,7 @@ export function FlowPage() {
                     )
                   }
                 >
-                  显示全部字段
+                  {uiText("显示全部字段")}
                 </button>
                 {ctx.state.draft.catalog.fields
                   .filter((f) => f.tableId === selectedRef.tableId)
@@ -505,7 +532,7 @@ export function FlowPage() {
                         f.name}
                     </label>
                   ))}
-                <h4>相关字段规则</h4>
+                <h4>{uiText("相关字段规则")}</h4>
                 {rules
                   .filter(
                     (r) =>
@@ -545,8 +572,10 @@ export function FlowPage() {
                   selectedRule && !candidate
                     ? () =>
                         setConfirm({
-                          title: "删除字段规则",
-                          body: "只删除当前规则及连线，不删除任何表或字段。",
+                          title: uiText("删除字段规则"),
+                          body: uiText(
+                            "只删除当前规则及连线，不删除任何表或字段。",
+                          ),
                           action: () => {
                             ctx.applyOperation((s) =>
                               deleteRule(s, { ruleId: selectedRule.ruleId }),
@@ -576,7 +605,7 @@ export function FlowPage() {
           <Modal title={confirm.title} onClose={() => setConfirm(null)}>
             <p>{confirm.body}</p>
             <div className="studio-actions">
-              <button onClick={() => setConfirm(null)}>取消</button>
+              <button onClick={() => setConfirm(null)}>{uiText("取消")}</button>
               <button
                 className="danger"
                 onClick={() => {
@@ -584,7 +613,7 @@ export function FlowPage() {
                   setConfirm(null);
                 }}
               >
-                确认删除
+                {uiText("确认删除")}
               </button>
             </div>
           </Modal>
@@ -604,6 +633,7 @@ function StepProperties({
   onAttach: () => void;
   onDelete: () => void;
 }) {
+  useUiLanguage();
   const ctx = useWorkspace();
   const [name, setName] = useState(step.name),
     [note, setNote] = useState(step.note),
@@ -622,7 +652,7 @@ function StepProperties({
     <section data-testid="flow-detail">
       <h3>{shapes.find((s) => s[0] === (step.kind ?? "step"))?.[1]}</h3>
       <label>
-        节点名称
+        {uiText("节点名称")}
         <input
           data-testid="step-name"
           value={name}
@@ -630,7 +660,7 @@ function StepProperties({
         />
       </label>
       <label>
-        业务说明
+        {uiText("业务说明")}
         <textarea
           data-testid="step-note"
           value={note}
@@ -639,7 +669,7 @@ function StepProperties({
       </label>
       <div className="studio-form-pair">
         <label>
-          横坐标
+          {uiText("横坐标")}
           <input
             type="number"
             data-testid="step-x"
@@ -648,7 +678,7 @@ function StepProperties({
           />
         </label>
         <label>
-          纵坐标
+          {uiText("纵坐标")}
           <input
             type="number"
             data-testid="step-y"
@@ -661,7 +691,7 @@ function StepProperties({
         <>
           <div className="studio-form-pair">
             <label>
-              宽度
+              {uiText("宽度")}
               <input
                 type="number"
                 min={320}
@@ -670,7 +700,7 @@ function StepProperties({
               />
             </label>
             <label>
-              高度
+              {uiText("高度")}
               <input
                 type="number"
                 min={220}
@@ -681,11 +711,11 @@ function StepProperties({
           </div>
           <button className="studio-wide" onClick={onAttach}>
             <Plus size={14} />
-            从已有表目录添加
+            {uiText("从已有表目录添加")}
           </button>
         </>
       )}
-      {error && <p className="studio-error">{error}</p>}
+      {error && <p className="studio-error">{uiError(error)}</p>}
       <div className="studio-actions">
         <button
           data-testid="step-apply"
@@ -706,15 +736,17 @@ function StepProperties({
             setError(r.ok ? "" : r.error.message);
           }}
         >
-          应用节点属性
+          {uiText("应用节点属性")}
         </button>
         <button className="danger" onClick={onDelete}>
           <Trash2 size={13} />
-          删除节点
+          {uiText("删除节点")}
         </button>
       </div>
       <p className="studio-help">
-        位置 {Math.round(step.x)}, {Math.round(step.y)} · 拖动自动更新布局草稿。
+        {uiText("位置 ")}
+        {Math.round(step.x)}, {Math.round(step.y)}
+        {uiText(" · 拖动自动更新布局草稿。")}
       </p>
     </section>
   );
@@ -728,6 +760,7 @@ function TransitionProperties({
   flowId: string;
   onClose: () => void;
 }) {
+  useUiLanguage();
   const ctx = useWorkspace();
   const [draft, setDraft] = useState({ ...value }),
     [error, setError] = useState(""),
@@ -735,42 +768,42 @@ function TransitionProperties({
   const flow = ctx.state.draft.business?.flows.find((f) => f.flowId === flowId);
   return (
     <section data-testid="transition-panel">
-      <h3>流程连线</h3>
+      <h3>{uiText("流程连线")}</h3>
       <p className="studio-help">
-        只记录顺序、条件及动作说明，不执行任何业务。
+        {uiText("只记录顺序、条件及动作说明，不执行任何业务。")}
       </p>
-      <div className="studio-bound-pair" aria-label="已连接的模块">
-        <strong>已连接的模块</strong>
+      <div className="studio-bound-pair" aria-label={uiText("已连接的模块")}>
+        <strong>{uiText("已连接的模块")}</strong>
         <div>
           {flow?.steps.find((s) => s.stepId === value.sourceStepId)?.name} →{" "}
           {flow?.steps.find((s) => s.stepId === value.targetStepId)?.name}
         </div>
-        <p>端点由画布连线确定；需要更换对象时重新连线。</p>
+        <p>{uiText("端点由画布连线确定；需要更换对象时重新连线。")}</p>
       </div>
       <label>
-        连线名称
+        {uiText("连线名称")}
         <input
           data-testid="transition-label"
           value={draft.label}
           onChange={(e) => setDraft({ ...draft, label: e.target.value })}
-          placeholder="自动命名"
+          placeholder={uiText("自动命名")}
         />
       </label>
       {(draft.condition || draft.note) && (
         <details className="studio-editor-details">
-          <summary>已有连线说明</summary>
+          <summary>{uiText("已有连线说明")}</summary>
           {draft.condition && <p>{draft.condition}</p>}
           {draft.note && <p>{draft.note}</p>}
         </details>
       )}
       {error && (
         <p role="alert" className="studio-error">
-          {error}
+          {uiError(error)}
         </p>
       )}
       <div className="studio-actions">
         <button data-testid="transition-cancel" onClick={onClose}>
-          取消
+          {uiText("取消")}
         </button>
         <button
           className="primary"
@@ -787,17 +820,17 @@ function TransitionProperties({
             else setError(result.error.message);
           }}
         >
-          应用连线
+          {uiText("应用连线")}
         </button>
         {value.transitionId && (
           <button className="danger" onClick={() => setConfirm(true)}>
-            删除
+            {uiText("删除")}
           </button>
         )}
       </div>
       {confirm && (
-        <Modal title="删除流程连线" onClose={() => setConfirm(false)}>
-          <p>只删除当前流程的这条连线，不影响节点和表。</p>
+        <Modal title={uiText("删除流程连线")} onClose={() => setConfirm(false)}>
+          <p>{uiText("只删除当前流程的这条连线，不影响节点和表。")}</p>
           <button
             className="danger"
             onClick={() => {
@@ -807,7 +840,7 @@ function TransitionProperties({
               onClose();
             }}
           >
-            确认删除
+            {uiText("确认删除")}
           </button>
         </Modal>
       )}

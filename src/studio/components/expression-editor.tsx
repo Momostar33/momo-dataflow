@@ -1,3 +1,4 @@
+import { uiError, uiText, useUiLanguage } from "../i18n";
 import { useState, useEffect, useMemo, useRef } from "react";
 import type {
   BusinessDocument,
@@ -33,6 +34,7 @@ export function ExpressionEditor({
   onValidityChange,
   showErrors = false,
 }: ExpressionEditorProps) {
+  useUiLanguage();
   const aliases = useMemo(
     () => fieldAliases(business, catalog),
     [business, catalog],
@@ -42,7 +44,15 @@ export function ExpressionEditor({
     [active, setActive] = useState<string | null>(null),
     [insertError, setInsertError] = useState("");
   const areas = useRef<Record<string, HTMLTextAreaElement | null>>({});
-  const cursors = useRef<Record<string, { start: number; end: number }>>({});
+  const cursors = useRef<
+    Record<
+      string,
+      {
+        start: number;
+        end: number;
+      }
+    >
+  >({});
   const bridge = useFieldInsertion();
   // Keep unfinished text when a target or another mapping changes. New rule IDs remount this editor.
   useEffect(
@@ -126,10 +136,10 @@ export function ExpressionEditor({
   );
   return (
     <section className="studio-editor-card studio-mappings">
-      <h3>字段映射与公式</h3>
+      <h3>{uiText("字段映射与公式")}</h3>
       {insertError && (
         <p role="alert" className="studio-error">
-          {insertError}
+          {uiError(insertError)}
         </p>
       )}
       {mappings.map((m, i) => {
@@ -140,7 +150,7 @@ export function ExpressionEditor({
         return (
           <section key={m.id} className="studio-rule-mapping">
             <label>
-              目标字段
+              {uiText("目标字段")}
               <FieldPicker
                 business={business}
                 catalog={catalog}
@@ -151,7 +161,7 @@ export function ExpressionEditor({
               />
             </label>
             <label>
-              公式
+              {uiText("公式")}
               <textarea
                 data-testid={`mapping-expression-${i}`}
                 ref={(el) => {
@@ -176,13 +186,13 @@ export function ExpressionEditor({
                   e.stopPropagation();
                   const token = decodeDraggedField(raw);
                   if (token) insert(token, m.id);
-                  else setInsertError("无法读取这个字段");
+                  else setInsertError(uiText("无法读取这个字段"));
                 }}
               />
             </label>
             {error && (
               <p role="alert" className="studio-error">
-                {error}
+                {uiError(error)}
               </p>
             )}
             <div className="studio-expression-tools">
@@ -193,13 +203,13 @@ export function ExpressionEditor({
                   setActive(m.id);
                 }}
               >
-                选择字段
+                {uiText("选择字段")}
               </button>
               <button
                 className="danger"
                 onClick={() => onChange(mappings.filter((x) => x.id !== m.id))}
               >
-                移除此映射
+                {uiText("移除此映射")}
               </button>
             </div>
             {picker === m.id && (
@@ -217,9 +227,9 @@ export function ExpressionEditor({
               </div>
             )}
             <details className="studio-editor-details">
-              <summary>备注</summary>
+              <summary>{uiText("备注")}</summary>
               <input
-                aria-label="映射备注"
+                aria-label={uiText("映射备注")}
                 data-testid={`mapping-note-${i}`}
                 value={m.note}
                 onChange={(e) => update(m.id, { note: e.target.value })}
@@ -237,7 +247,7 @@ export function ExpressionEditor({
           onChange([...mappings, { id, target: null, expr: [], note: "" }]);
         }}
       >
-        添加字段映射
+        {uiText("添加字段映射")}
       </button>
     </section>
   );

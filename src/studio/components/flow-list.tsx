@@ -1,3 +1,4 @@
+import { uiError, uiText, useUiLanguage } from "../i18n";
 import { useState } from "react";
 import {
   Plus,
@@ -12,6 +13,7 @@ import { addFlow, updateFlow, deleteFlow } from "../domain/flows";
 import { useStudioNavigation } from "./studio-shell";
 import { Modal, Empty } from "./workbench-ui";
 export function FlowList() {
+  useUiLanguage();
   const ctx = useWorkspace(),
     nav = useStudioNavigation();
   const db = nav.databaseId || localStorage.getItem("database_id");
@@ -30,8 +32,8 @@ export function FlowList() {
     <div className="studio-flow-list" data-testid="flows-root">
       <div className="studio-page-title">
         <div>
-          <h2>业务流程</h2>
-          <p>每个流程独立绘制步骤、表引用、匹配与字段映射。</p>
+          <h2>{uiText("业务流程")}</h2>
+          <p>{uiText("每个流程独立绘制步骤、表引用、匹配与字段映射。")}</p>
         </div>
         <button
           className="primary"
@@ -43,7 +45,7 @@ export function FlowList() {
           }}
         >
           <Plus size={14} />
-          新建业务流程
+          {uiText("新建业务流程")}
         </button>
       </div>
       <label className="studio-search studio-flow-search">
@@ -51,18 +53,22 @@ export function FlowList() {
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="搜索流程名称与备注"
+          placeholder={uiText("搜索流程名称与备注")}
         />
       </label>
       {!flows.length && (
         <Empty>
           <Workflow size={38} />
-          <h3>{db ? "还没有业务流程" : "请先创建设计库"}</h3>
+          <h3>{db ? uiText("还没有业务流程") : uiText("请先创建设计库")}</h3>
           <p>
-            例如创建「采购」，添加审批步骤，把已有表拖进步骤，再连线说明条件和公式。
+            {uiText(
+              "例如创建「采购」，添加审批步骤，把已有表拖进步骤，再连线说明条件和公式。",
+            )}
           </p>
           {!db && (
-            <button onClick={() => nav.createDesign()}>创建设计库</button>
+            <button onClick={() => nav.createDesign()}>
+              {uiText("创建设计库")}
+            </button>
           )}
         </Empty>
       )}
@@ -80,26 +86,29 @@ export function FlowList() {
               </div>
               <div className="studio-flow-card-text">
                 <h3>{f.name}</h3>
-                <p>{f.note || "尚未填写业务说明"}</p>
+                <p>{f.note || uiText("尚未填写业务说明")}</p>
                 <small>
-                  {f.steps.length} 个节点 ·{" "}
+                  {f.steps.length}
+                  {uiText(" 个节点 ·")}{" "}
                   {
                     ctx.state.draft.business?.refs.filter(
                       (r) => r.flowId === f.flowId,
                     ).length
                   }{" "}
-                  处表引用 ·{" "}
+                  {uiText("处表引用 ·")}{" "}
                   {
                     ctx.state.draft.business?.rules.filter(
                       (r) => r.flowId === f.flowId,
                     ).length
                   }{" "}
-                  条字段规则
+                  {uiText("条字段规则")}
                 </small>
               </div>
               <div className="studio-flow-card-actions">
                 <button
-                  aria-label={`编辑流程 ${f.name}`}
+                  aria-label={uiText("编辑流程 {{v0}}", {
+                    v0: f.name,
+                  })}
                   onClick={() => {
                     setForm({ id: f.flowId, name: f.name, note: f.note });
                     setError("");
@@ -108,7 +117,9 @@ export function FlowList() {
                   <Pencil size={14} />
                 </button>
                 <button
-                  aria-label={`删除流程 ${f.name}`}
+                  aria-label={uiText("删除流程 {{v0}}", {
+                    v0: f.name,
+                  })}
                   onClick={() => setDeleting(f.flowId)}
                 >
                   <Trash2 size={14} />
@@ -117,7 +128,7 @@ export function FlowList() {
                   className="primary"
                   onClick={() => nav.go("/studio/flows/" + f.flowId)}
                 >
-                  打开画布
+                  {uiText("打开画布")}
                   <ArrowRight size={14} />
                 </button>
               </div>
@@ -126,30 +137,30 @@ export function FlowList() {
       </div>
       {form && (
         <Modal
-          title={form.id ? "编辑业务流程" : "新建业务流程"}
+          title={form.id ? uiText("编辑业务流程") : uiText("新建业务流程")}
           onClose={() => setForm(null)}
         >
           <label>
-            名称
+            {uiText("名称")}
             <input
               data-testid="flow-name"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="例如：采购、收货"
+              placeholder={uiText("例如：采购、收货")}
             />
           </label>
           <label>
-            业务说明
+            {uiText("业务说明")}
             <textarea
               data-testid="flow-note"
               value={form.note}
               onChange={(e) => setForm({ ...form, note: e.target.value })}
             />
           </label>
-          {error && <p className="studio-error">{error}</p>}
+          {error && <p className="studio-error">{uiError(error)}</p>}
           <div className="studio-actions">
             <button data-testid="flow-cancel" onClick={() => setForm(null)}>
-              取消
+              {uiText("取消")}
             </button>
             <button
               className="primary"
@@ -172,31 +183,37 @@ export function FlowList() {
                 else setError(r.error.message);
               }}
             >
-              应用
+              {uiText("应用")}
             </button>
           </div>
         </Modal>
       )}
       {doomed && (
         <Modal
-          title={`删除流程「${doomed.name}」`}
+          title={uiText("删除流程「{{v0}}」", {
+            v0: doomed.name,
+          })}
           onClose={() => setDeleting(null)}
         >
           <p>
-            将移除本流程的{doomed.steps.length}个节点、
+            {uiText("将移除本流程的")}
+            {doomed.steps.length}
+            {uiText("个节点、")}
             {
               ctx.state.draft.business?.refs.filter(
                 (r) => r.flowId === doomed.flowId,
               ).length
             }
-            处表引用及所有字段规则、触发箭头。目录中的表和字段不删除。
+            {uiText(
+              "处表引用及所有字段规则、触发箭头。目录中的表和字段不删除。",
+            )}
           </p>
           <div className="studio-actions">
             <button
               data-testid="flow-delete-cancel"
               onClick={() => setDeleting(null)}
             >
-              取消
+              {uiText("取消")}
             </button>
             <button
               className="danger"
@@ -208,7 +225,7 @@ export function FlowList() {
                 if (r.ok) setDeleting(null);
               }}
             >
-              确认删除流程
+              {uiText("确认删除流程")}
             </button>
           </div>
         </Modal>

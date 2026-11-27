@@ -1,9 +1,9 @@
+import { uiError, uiText, useUiLanguage } from "../i18n";
 import { useState } from "react";
 import { useMomoWorkspace } from "../state/momo-view";
 import { addTable, renameTable } from "../domain/catalog-tables";
 import { applyTablePatch } from "../projection/catalog-patch";
 import type { WorkspaceState } from "../state/workspace-state";
-
 /**
  * TableEditor renders a form for creating or editing a table.
  *
@@ -25,26 +25,32 @@ export function TableEditor({
   onApplied?: (id: string) => void;
   onCancel?: () => void;
 }): JSX.Element {
+  useUiLanguage();
   const ctx = useMomoWorkspace();
   const { state } = ctx;
   const { catalog, metadata } = state.draft;
-
   // Find the raw table row if editing
   const table = tableId ? catalog.tables.find((t) => t.id === tableId) : null;
-
   // Initialize form fields from raw data or empty for new table
   const [name, setName] = useState(table?.name ?? "");
   const [note, setNote] = useState(table?.note ?? "");
   const [displayName, setDisplayName] = useState(
     tableId ? (metadata.tableDisplayNames[tableId] ?? "") : "",
   );
-
   const [error, setError] = useState<string | null>(null);
-
   type TableApplyResult =
-    | { ok: true; state: WorkspaceState; tableId: string }
-    | { ok: false; error: { code: string; message: string } };
-
+    | {
+        ok: true;
+        state: WorkspaceState;
+        tableId: string;
+      }
+    | {
+        ok: false;
+        error: {
+          code: string;
+          message: string;
+        };
+      };
   const handleApply = () => {
     const result = ctx.applyOperation<TableApplyResult>((current) => {
       if (!tableId) {
@@ -74,7 +80,6 @@ export function TableEditor({
         return { ok: true, state: newState, tableId };
       }
     });
-
     if (result.ok) {
       setError(null);
       const newId = tableId ?? result.tableId;
@@ -84,7 +89,6 @@ export function TableEditor({
       setError(result.error.message);
     }
   };
-
   return (
     <div
       data-testid="edit-table"
@@ -97,13 +101,15 @@ export function TableEditor({
         backgroundColor: "#fafafa",
       }}
     >
-      <h3>{tableId ? "编辑数据表" : "新建数据表"}</h3>
+      <h3>{tableId ? uiText("编辑数据表") : uiText("新建数据表")}</h3>
       {error && (
-        <div style={{ color: "red", marginBottom: "8px" }}>{error}</div>
+        <div style={{ color: "red", marginBottom: "8px" }}>
+          {uiError(error)}
+        </div>
       )}
       <div style={{ marginBottom: "8px" }}>
         <label>
-          MySQL 技术表名:
+          {uiText("MySQL 技术表名:")}
           <input
             data-testid="table-name"
             type="text"
@@ -115,7 +121,7 @@ export function TableEditor({
       </div>
       <div style={{ marginBottom: "8px" }}>
         <label>
-          说明名称:
+          {uiText("说明名称:")}
           <input
             data-testid="table-label"
             type="text"
@@ -127,7 +133,7 @@ export function TableEditor({
       </div>
       <div style={{ marginBottom: "8px" }}>
         <label>
-          备注:
+          {uiText("备注:")}
           <textarea
             data-testid="table-note"
             value={note}
@@ -138,10 +144,10 @@ export function TableEditor({
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
         <button data-testid="table-cancel" onClick={onCancel}>
-          取消
+          {uiText("取消")}
         </button>
         <button data-testid="table-apply" onClick={handleApply}>
-          应用
+          {uiText("应用")}
         </button>
       </div>
     </div>
