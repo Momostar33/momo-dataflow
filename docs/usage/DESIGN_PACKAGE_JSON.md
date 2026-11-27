@@ -6,6 +6,8 @@
 
 使用 UTF-8、合法 JSON，无注释/尾逗号，建议扩展名 `.stackrender.json`。可直接编辑文件，保留稳定实体ID并同步引用；不是修改浏览器运行存储。最小完整例子见 [design-package-v1.example.json](examples/design-package-v1.example.json)，其中只有虚构结构。
 
+格式标识 `stackrender-design-package` 和建议扩展名保留用于兼容已有设计包，不代表本版开放原 StackRender ERD 或 SQL 导入入口。
+
 设计包描述表结构和业务模块，不含业务行、密码、Token、真实连接配置或执行脚本。实际业务 JSON 保存在业务项目，不放入工具公共示例。SQL类型只作设计元数据，不产生DDL。
 
 ## 2. 两种JSON不能混用
@@ -14,7 +16,7 @@
 |---|---|---|
 | `format: stackrender-design-package`，`version: 1` | 顶部“导入设计包” | MySQL类型目录、表/字段/备注、普通步骤分组、局部表引用、等值字段条件、索引和有证据的物理关系 |
 | `BusinessDocument.schemaVersion: 2` | 应用内部业务文档 | 类型模板、映射表达式、开始/结束/判断、流程连线等；不能直接当包v1上传 |
-| DrawDB、draw.io、原StackRender其他导出格式 | 来源材料/其他原生入口 | 顶部设计包导入不会自动转换；先明确适配，不只改扩展名 |
+| DrawDB、draw.io、原StackRender其他导出格式 | 外部来源材料；本版无对应原生导入入口 | 顶部设计包导入不会自动转换；先明确适配，不只改扩展名 |
 
 包v1中 `steps[].kind` 只可省略或为 `step`；`transitions` 只可省略或空数组；`rules[].mappings` 必须为空数组。非空规则至少有一条有效匹配条件。界面编辑的公式/触发只保存说明、不计算；v1禁止导入这些内容，不能通过混入内部JSON规避校验。
 

@@ -282,7 +282,7 @@ function Workbench({ children }: { children?: ReactNode }) {
           databaseOperations.switchDatabase(id); setDb(id); setCreateOpen(false); go("/studio/tables");
         }} />}
         {aboutOpen && <Modal title="关于 Momo DataFlow" onClose={() => setAboutOpen(false)}>
-          <p>Momo DataFlow 0.1.0-beta.2，基于 StackRender 二次开发。修改日期：2026-11-27。</p>
+          <p>Momo DataFlow 0.1.0-beta.3，基于 StackRender 二次开发。修改日期：2026-11-27。</p>
           <p>原项目及贡献者版权继续保留；本修改版依 GNU AGPL v3 提供，不附带任何担保。</p>
           <p><a href="https://github.com/stackrender/stackrender" target="_blank" rel="noreferrer">StackRender 原项目</a> · <a href="https://github.com/Momostar33/momo-dataflow" target="_blank" rel="noreferrer">本版本源代码</a> · <a href="/LICENSE.txt" target="_blank" rel="noreferrer">AGPL-3.0 许可全文</a></p>
         </Modal>}

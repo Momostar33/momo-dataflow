@@ -6,7 +6,7 @@
 
 A local-first business flow and data relationship workbench, derived from StackRender. Independently maintained; not an official StackRender release.
 
-> **v0.1.0-beta.2 · 预览版**。关系、公式和触发箭头用于设计说明，不执行计算或业务任务。
+> **v0.1.0-beta.3 · 预览版**。关系、公式和触发箭头用于设计说明，不执行计算或业务任务。
 
 ## 与原版 StackRender 的关系
 
@@ -33,11 +33,11 @@ StackRender 原版主要提供数据库结构图（ERD）、表与字段设计�
 - **工作台操作**：右侧面板可调宽、收起；设计包可拖入窗口预览后导入；确认后删除字段或整个设计库。
 - **本地保存**：手动保存，默认每 5 分钟自动保存，可设置间隔。
 
-删除字段前会提示影响；确认后同时移除依赖该字段的关系或规则。删除设计库会清理其表、字段和流程等内容，保留其他设计库及共享模板。删除操作没有回收站，请先确认影响范围。
+删除字段前会提示影响；确认后同时移除依赖该字段的关系或整条业务规则（包含该规则的其他条件和映射），避免残留错误引用。删除设计库会清理其表、字段和流程等内容，保留其他设计库及共享模板。删除字段先修改草稿，保存前可丢弃整份未保存草稿；删除设计库在确认后立即写入本地数据库。均不提供回收站，请先确认影响范围。
 
 ## 本地运行
 
-需要 Node.js（20.19+ 或 22.12+，参见 [Vite 7 要求](https://v7.vite.dev/guide/migration#node-js-support)）、npm 和支持浏览器 SQLite/WASM 的现代 Chromium 浏览器。本次验证环境为 **Node.js 25.8.0 / npm 11.11.0**；其他 Node 版本未在本次发布中验证。
+需要 Node.js（20.x 须为 20.19 及以上，或使用 22.12 及以上版本；参见 [Vite 7 要求](https://v7.vite.dev/guide/migration#node-js-support)）、npm 和支持浏览器 SQLite/WASM 的现代 Chromium 浏览器。本次验证环境为 **Node.js 25.8.0 / npm 11.11.0**；其他 Node 版本未在本次发布中验证。
 
 ```sh
 git clone https://github.com/Momostar33/momo-dataflow.git
@@ -59,11 +59,11 @@ npm run preview
 
 ## 数据保存与 JSON
 
-设计保存在**当前浏览器个人资料、当前站点地址**的 SQLite 中，数据库名为 `momo-dataflow.sqlite`。导入一个 JSON 不会在电脑上创建对应项目文件夹。请固定浏览器与访问地址；`localhost`、`127.0.0.1` 或不同端口属于不同来源，数据不会自动互通。关闭本地服务前先保存，清除站点数据会清除设计。
+设计保存在**当前浏览器个人资料、当前站点地址**的 SQLite 中，数据库名为 `momo-dataflow.sqlite`。导入一个 JSON 不会在电脑上创建对应项目文件夹。请固定浏览器与访问地址；`localhost`、`127.0.0.1` 或不同端口属于不同来源，数据不会自动互通。右侧“保存关系”或表单“应用”先把编辑内容加入工作区草稿；点击顶部“保存”，或等待自动保存成功，才写入 SQLite。关闭本地服务前确认状态为“已保存”。清除站点数据会清除设计。
 
 源 JSON 与浏览器数据**不自动同步**，界面编辑不会回写原文件。设计包 v1 仅追加新设计库，不覆盖或合并已有库；同名或实体 ID 冲突会拒绝导入。当前还没有完整设计包导出、往返同步或版本合并功能，Git 里的 JSON 不是浏览器数据的实时备份。
 
-v1 支持表、字段、普通步骤、表引用和字段等值条件；**尚不支持导入公式映射和分支／触发线**，这些可在界面中编辑。支持情况与示例见 [JSON 格式说明](docs/usage/DESIGN_PACKAGE_JSON.md)。
+v1 支持表、字段、普通步骤、表引用和字段等值条件；**尚不支持导入公式映射和分支／触发线**，这些可在界面中编辑；上游 draw.io、DrawDB 或其他 JSON 不能只改扩展名就直接导入。单个设计包上限为 30 MiB。支持情况与示例见 [JSON 格式说明](docs/usage/DESIGN_PACKAGE_JSON.md)。
 
 ## 功能边界
 
@@ -80,7 +80,7 @@ npm run typecheck
 npm run build
 ```
 
-`typecheck` 检查公开版应用入口及其依赖图；未被入口引用的上游遗留模块不在此检查范围。测试和构建结果、已知限制见 [验证记录](docs/VALIDATION.md)。本次依赖审计剩余 2 项中危 React Router 告警，严重与高危为 0；仍按预览版交付。自动测试不代替你的实际业务验收。
+`typecheck` 检查公开版应用入口及其依赖图；未被入口引用的上游遗留模块不在此检查范围。测试和构建结果、已知限制见 [验证记录](docs/VALIDATION.md)。本次锁文件的 `npm audit` 为 0 项已知告警；这是当前依赖公告检查结果，不等于完整安全审计。自动测试不代替你的实际业务验收。
 
 - [使用说明](docs/usage/USER_GUIDE.md)
 - [设计包 JSON 格式](docs/usage/DESIGN_PACKAGE_JSON.md)
