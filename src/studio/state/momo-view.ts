@@ -93,7 +93,7 @@ export function useMomoWorkspace() {
             "field",
             args.fieldId
         );
-        if (blocked) {
+        if (blocked && !args.confirmed) {
             return {
                 ok: false,
                 error: {

@@ -1,5 +1,5 @@
 import "@xyflow/react/dist/style.css";
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import {
   ReactFlow,
   Background,
@@ -12,6 +12,12 @@ import {
 } from "@xyflow/react";
 import { Table2, ExternalLink } from "lucide-react";
 import type { OverviewNode, OverviewEdge } from "./derive-overview";
+import {
+  layoutOverview,
+  OVERVIEW_TABLE_WIDTH,
+  OVERVIEW_TABLE_HEIGHT,
+  type OverviewPositions,
+} from "./overview-layout";
 type TableNode = Node<
   { displayName: string; name: string; tableId: string },
   "overview"
@@ -25,8 +31,8 @@ function OverviewTableNode({ data, selected }: NodeProps<TableNode>) {
       <Handle type="target" position={Position.Left} />
       <Table2 size={16} />
       <div>
-        <strong>{data.displayName}</strong>
-        <code>{data.name}</code>
+        <strong title={data.displayName}>{data.displayName}</strong>
+        <code title={data.name}>{data.name}</code>
       </div>
       <Handle type="source" position={Position.Right} />
     </div>
@@ -47,55 +53,109 @@ export function ReadonlyGraph({
   onSelectTable,
   onOpenFlow,
 }: ReadonlyGraphProps) {
+  const layoutKey = JSON.stringify({
+    nodes: nodes.map((n) => n.tableId).sort(),
+    edges: edges.map((e) => [e.sourceTableId, e.targetTableId, e.kind]).sort(),
+  });
+  const [layout, setLayout] = useState<{
+    key: string;
+    positions: OverviewPositions;
+    error: string;
+  }>({ key: "", positions: {}, error: "" });
+  useEffect(() => {
+    let active = true;
+    layoutOverview(nodes, edges)
+      .then((positions) => {
+        if (active) setLayout({ key: layoutKey, positions, error: "" });
+      })
+      .catch(() => {
+        // Deterministic fallback keeps a failed layout readable without touching data.
+        if (active)
+          setLayout({
+            key: layoutKey,
+            positions: Object.fromEntries(
+              nodes.map((n, i) => [
+                n.tableId,
+                { x: (i % 3) * 380, y: Math.floor(i / 3) * 160 },
+              ]),
+            ),
+            error: "自动排布暂时失败，已使用简化布局。",
+          });
+      });
+    return () => {
+      active = false;
+    };
+  }, [layoutKey]);
+  const ready = layout.key === layoutKey;
   const displayNodes = useMemo(
     () =>
-      nodes.map((n, i) => ({
+      nodes.map((n) => ({
         id: n.tableId,
         type: "overview" as const,
         data: { displayName: n.displayName, name: n.name, tableId: n.tableId },
-        position: { x: (i % 3) * 310, y: Math.floor(i / 3) * 180 },
+        position: layout.positions[n.tableId] ?? { x: 0, y: 0 },
+        style: { width: OVERVIEW_TABLE_WIDTH, height: OVERVIEW_TABLE_HEIGHT },
         selected: selectedTableId === n.tableId,
       })),
-    [nodes, selectedTableId],
+    [nodes, selectedTableId, layout.positions],
   );
   const displayEdges = useMemo(
     () =>
-      edges.map((e) => ({
-        id: e.id,
-        source: e.sourceTableId,
-        target: e.targetTableId,
-        label: e.flowNames.join("、"),
-        markerEnd:
-          e.kind === "mapping" ? { type: MarkerType.ArrowClosed } : undefined,
-        style: {
-          stroke: e.kind === "mapping" ? "#3974c6" : "#c78b34",
-          strokeDasharray: e.kind === "matching" ? "6 4" : undefined,
-        },
-        labelStyle: { fontSize: 11 },
-      })),
-    [edges],
+      edges.map((e) => {
+        const reverse =
+          e.kind === "matching" &&
+          (layout.positions[e.sourceTableId]?.x ?? 0) >
+            (layout.positions[e.targetTableId]?.x ?? 0);
+        return {
+          id: e.id,
+          source: reverse ? e.targetTableId : e.sourceTableId,
+          target: reverse ? e.sourceTableId : e.targetTableId,
+          label: e.flowNames.join("、"),
+          markerEnd:
+            e.kind === "mapping" ? { type: MarkerType.ArrowClosed } : undefined,
+          style: {
+            stroke: e.kind === "mapping" ? "#3974c6" : "#c78b34",
+            strokeDasharray: e.kind === "matching" ? "6 4" : undefined,
+          },
+          labelStyle: { fontSize: 11 },
+        };
+      }),
+    [edges, layout.positions],
   );
   const label = (id: string) =>
     nodes.find((n) => n.tableId === id)?.displayName ?? "未知表";
   return (
     <div className="studio-readonly-layout" data-testid="readonly-graph">
-      <div className="studio-overview-canvas">
-        <ReactFlow
-          nodes={displayNodes}
-          edges={displayEdges}
-          nodeTypes={nodeTypes}
-          nodesDraggable={false}
-          nodesConnectable={false}
-          edgesReconnectable={false}
-          deleteKeyCode={null}
-          maxZoom={1.25}
-          fitView
-          onNodeClick={(_, n) => onSelectTable?.(n.id)}
-        >
-          <Controls showInteractive={false} />
-          <Background gap={24} />
-        </ReactFlow>
-        {!nodes.length && (
+      <div className="studio-overview-canvas" aria-busy={!ready}>
+        {!ready && (
+          <div className="studio-canvas-empty" role="status">
+            正在自动排布…
+          </div>
+        )}
+        {ready && (
+          <ReactFlow
+            key={layoutKey}
+            nodes={displayNodes}
+            edges={displayEdges}
+            nodeTypes={nodeTypes}
+            nodesDraggable={false}
+            nodesConnectable={false}
+            edgesReconnectable={false}
+            deleteKeyCode={null}
+            maxZoom={1.25}
+            fitView
+            onNodeClick={(_, n) => onSelectTable?.(n.id)}
+          >
+            <Controls showInteractive={false} />
+            <Background gap={24} />
+          </ReactFlow>
+        )}
+        {ready && layout.error && (
+          <p className="studio-canvas-notice" role="status">
+            {layout.error}
+          </p>
+        )}
+        {ready && !nodes.length && (
           <div className="studio-canvas-empty">
             尚无已保存的表关系。在业务流程中添加表与字段规则后保存。
           </div>

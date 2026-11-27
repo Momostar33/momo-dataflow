@@ -1,3 +1,4 @@
+import { nextRelationName } from "../domain/relation-names";
 import { useState, useEffect, useMemo } from "react";
 import {
   ReactFlow,
@@ -149,7 +150,7 @@ export function FlowCanvas({
         sourceStepId: c.source,
         targetStepId: c.target,
         kind: "sequence",
-        label: "",
+        label: nextRelationName(state.draft.business, flowId),
         condition: "",
         note: "",
       });

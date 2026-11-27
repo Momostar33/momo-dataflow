@@ -240,10 +240,10 @@ export function TemplatesPage() {
     <div className="studio-template-workspace" data-testid="templates-root">
       <SidePanel initial={280}>
         <div className="studio-panel-heading">
-          <strong>业务类型模板</strong>
+          <strong>字段模板</strong>
           <button data-testid="new-template" onClick={clearForm}>
             <Plus size={13} />
-            新建
+            新建字段模板
           </button>
         </div>
         <div className="studio-panel-scroll">
@@ -264,19 +264,12 @@ export function TemplatesPage() {
               </div>
             </button>
           ))}
-          <button
-            className="studio-wide"
-            data-testid="new-money-template"
-            onClick={clearForm}
-          >
-            新建金额模板
-          </button>
         </div>
       </SidePanel>
       <section className="studio-template-main">
         <div className="studio-page-title">
           <div>
-            <h2>{selected?.name ?? "新建类型模板"}</h2>
+            <h2>{selected?.name ?? "新建字段模板"}</h2>
             <p>字段采用模板后参数统一；发布新版不会自动修改已有字段。</p>
           </div>
           {selected && (

@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.1.0-beta.2 — 2026-11-27
+
+- Confirmed field deletion with dependent-rule, foreign-key and index cleanup; confirmed design-library deletion.
+- JSON file selection and window drop with preview before import; field-template naming and fixed money precision.
+- Connection-scoped rule editing, numbered relation names, field drag/click insertion and two-column selectors.
+- Resizable/collapsible properties panel and automatic read-only overview layout.
+- README rewritten around the StackRender derivative scope, original provenance and current limitations; unchanged upstream README archived.
+- Security dependency updates with explicit lockfile and two scoped overrides; React 18 and business schema unchanged.
+- Validation: reproducible npm ci, 336 tests in 24 files, public-entry typecheck and production bundle passed. Browser checks cover import, persistence, dependent deletion, overview, attribution and final updated-dependency save/reload. npm audit: 0 critical/high, 2 moderate React Router advisories remain; see [validation](docs/VALIDATION.md).
+
+See [release notes](docs/releases/v0.1.0-beta.2.md) for usage and limitations. This is a preview, not a full JSON round-trip solution or business acceptance.
+
 ## 0.1.0-beta.1 — 2026-11-27
 
 - First independent Momo DataFlow preview, derived from StackRender through Momo Plus.

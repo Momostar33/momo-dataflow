@@ -1,3 +1,4 @@
+import { nextRelationName } from "../domain/relation-names";
 import { encodeFieldHandle, decodeFieldHandle } from "./field-handle";
 import type { Rule, BusinessDocument, ExprToken, Mapping } from "../contracts/business";
 import type { CatalogSnapshot } from "../contracts/catalog";
@@ -23,7 +24,7 @@ export { encodeFieldHandle, decodeFieldHandle };
  * @returns a new Rule object (with a fresh UUID) or null if the
  *          connection is invalid (missing refs/fields or cross‑flow).
  *
- * The returned Rule is *private* – it has no name/note and uses the
+ * The returned Rule is *private* – it has a sequential default name and uses the
  * default logic.  It is never persisted; the caller is responsible for
  * passing it to the UI for confirmation.
  */
@@ -66,7 +67,7 @@ export function connectionToRuleCandidate(
     const baseRule: Omit<Rule, "mappings" | "conditions"> = {
         ruleId,
         flowId,
-        name: "",
+        name: nextRelationName(business, flowId),
         note: "",
         logic: "ALL",
     };

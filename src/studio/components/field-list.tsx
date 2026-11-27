@@ -3,7 +3,8 @@ import { Pencil, ArrowUp, ArrowDown, Trash2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useMomoWorkspace } from "../state/momo-view";
 import { deleteField, moveField } from "../domain/catalog-fields";
-import { getCatalogUsage, Usage } from "../domain/catalog-usage";
+import { fieldDeletionImpact } from "../domain/field-deletion";
+import { Modal } from "./workbench-ui";
 import { projectCatalog } from "../projection/catalog-view";
 import type { FieldOpResult } from "../domain/catalog-fields";
 
@@ -74,39 +75,36 @@ export function FieldList({
 
   const [showConfirm, setShowConfirm] = useState(false);
   const [confirmFieldId, setConfirmFieldId] = useState<string | null>(null);
-  const [usageInfo, setUsageInfo] = useState<{
-    blocked: boolean;
-    usages: Usage[];
-  } | null>(null);
-
-  const openConfirm = (fieldId: string) => {
-    setConfirmFieldId(fieldId);
-    setShowConfirm(true);
-  };
-
-  const handleDelete = async () => {
-    if (!confirmFieldId) return;
-    const result = await ctx.applyOperation<FieldOpResult>((current) => {
-      const usage = getCatalogUsage(current.draft, "field", confirmFieldId);
-      if (usage.blocked) {
-        return {
-          ok: false,
-          error: {
-            code: "DELETE_BLOCKED",
-            message: "字段存在引用，不能删除",
-          },
-        } as const;
-      }
-      return deleteField(current, { fieldId: confirmFieldId });
-    });
-    if (!result.ok) {
-      const usage = getCatalogUsage(ctx.state.draft, "field", confirmFieldId);
-      setUsageInfo(usage);
-      return;
-    }
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const impact = confirmFieldId
+    ? fieldDeletionImpact(state.draft, confirmFieldId)
+    : null;
+  const closeConfirm = () => {
     setShowConfirm(false);
     setConfirmFieldId(null);
-    setUsageInfo(null);
+    setDeleteError(null);
+  };
+  const openConfirm = (fieldId: string) => {
+    setConfirmFieldId(fieldId);
+    setDeleteError(null);
+    setShowConfirm(true);
+  };
+  const handleDelete = async () => {
+    if (!confirmFieldId) return;
+    try {
+      const result = await ctx.applyOperation<FieldOpResult>((current) =>
+        deleteField(current, { fieldId: confirmFieldId, confirmed: true }),
+      );
+      if (!result.ok) {
+        setDeleteError(result.error.message);
+        return;
+      }
+      closeConfirm();
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error ? error.message : "删除失败，请重试",
+      );
+    }
   };
 
   const handleMove = (fieldId: string, toIndex: number) => {
@@ -123,7 +121,7 @@ export function FieldList({
             <th>技术类型</th>
             <th>精度 / 长度</th>
             <th>小数位</th>
-            <th>类型模板</th>
+            <th>字段模板</th>
             <th>备注</th>
             <th>操作</th>
           </tr>
@@ -161,7 +159,7 @@ export function FieldList({
                         title={
                           Math.max(...t.versions.map((v) => v.version)) >
                           a.appliedVersion
-                            ? "模板有新版本，请到类型模板预览更新"
+                            ? "模板有新版本，请到字段模板预览更新"
                             : ""
                         }
                       >
@@ -209,6 +207,7 @@ export function FieldList({
                     <ArrowDown size={12} />
                   </button>
                   <button
+                    aria-label={`删除字段 ${f.name}`}
                     data-testid={`field-delete-${f.id}`}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -224,60 +223,64 @@ export function FieldList({
         </tbody>
       </table>
 
-      {showConfirm && confirmFieldId && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.3)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "white",
-              padding: "16px",
-              borderRadius: "4px",
-              maxWidth: "400px",
-              width: "100%",
-            }}
-          >
-            <h4>确认删除字段</h4>
-            {usageInfo?.blocked && (
-              <div>
-                <p>字段仍被引用：</p>
-                <ul>
-                  {usageInfo.usages.map((u, idx) => (
-                    <li key={idx}>
-                      {u.kind} - {u.id}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            <div style={{ marginTop: "12px", textAlign: "right" }}>
-              <button
-                data-testid="delete-cancel"
-                onClick={() => {
-                  setShowConfirm(false);
-                  setConfirmFieldId(null);
-                  setUsageInfo(null);
-                }}
-                style={{ marginRight: "8px" }}
-              >
-                取消
-              </button>
-              <button data-testid="delete-confirm" onClick={handleDelete}>
-                确认删除
-              </button>
+      {showConfirm && confirmFieldId && impact && (
+        <Modal title="确认删除字段" onClose={closeConfirm}>
+          <p>
+            确定删除字段「
+            {rawFields.find((f) => f.id === confirmFieldId)?.name ??
+              confirmFieldId}
+            」吗？
+          </p>
+          <p>
+            确认后将同时删除相关关系；不相关的字段、表和流程保留。保存后生效，无法撤销。
+          </p>
+          {!!(
+            impact.relationships.length ||
+            impact.indices.length ||
+            impact.rules.length
+          ) && (
+            <div>
+              <p>该字段存在关联，以下内容将同时删除：</p>
+              <ul>
+                {impact.relationships.map((r) => (
+                  <li key={r.id}>表关系：{r.name || r.id}</li>
+                ))}
+                {impact.indices.map((i) => (
+                  <li key={i.id}>
+                    完整索引：{i.name}（含组合索引的全部成员关联，其他字段保留）
+                  </li>
+                ))}
+                {impact.rules.map((r) => (
+                  <li key={r.ruleId}>
+                    业务流程「
+                    {state.draft.business?.flows.find(
+                      (f) => f.flowId === r.flowId,
+                    )?.name ?? r.flowId}
+                    」／{r.name}：整条删除该关联规则（含其中的条件和映射）
+                  </li>
+                ))}
+              </ul>
             </div>
+          )}
+          {!!impact.assignments.length && (
+            <p>清除该字段的字段模板绑定，共享模板保留。</p>
+          )}
+          {!!impact.refs.length && (
+            <p>
+              从 {impact.refs.length}{" "}
+              个流程表引用的可见字段列表中移除，表引用保留。
+            </p>
+          )}
+          {deleteError && <p role="alert">{deleteError}</p>}
+          <div className="studio-actions">
+            <button data-testid="delete-cancel" onClick={closeConfirm}>
+              取消
+            </button>
+            <button data-testid="delete-confirm" onClick={handleDelete}>
+              确认删除
+            </button>
           </div>
-        </div>
+        </Modal>
       )}
     </>
   );

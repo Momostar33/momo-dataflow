@@ -12,7 +12,8 @@
  *
  *  - 顺序调整（T006B `moveField`）：按同表 sequence 稳定排序后把目标字段移动到
  *    指定 0-based 位置，再重排 sequence = 0..n-1；不改变任何字段 id 或其他列。
- *  - 引用保护删除（T006B `fieldImpact` / `deleteField`）：字段被 relationships
+ *  - 未确认调用保留引用保护；2026-11-27 UI 显式确认后按 field-deletion.ts 级联清理。
+ *  - 原引用保护删除（T006B `fieldImpact` / `deleteField`）：字段被 relationships
  *    （sourceFieldId/targetFieldId）或 field_indices（fieldId）引用时阻止直接删除；
  *    无引用才移除字段行并清理 metadata.fieldDisplayNames。只读影响查询 `fieldImpact`
  *    与表侧 `tableImpact`（T005）同口径。
@@ -27,6 +28,8 @@
  * 依赖：仅 F01 合同（../contracts/catalog）与 T002 状态机（../state/workspace-state）。
  * 不新增依赖、不 `any`、不 `ts-ignore`、不求值公式。
  */
+
+import { deleteConfirmedField } from "./field-deletion";
 
 import {
     CatalogDataTypeRow,
@@ -420,19 +423,15 @@ export function moveField(state: WorkspaceState, args: MoveFieldArgs): FieldOpRe
 }
 
 /**
- * 安全删除字段：
- *  - 有真实引用（relationships.sourceFieldId/targetFieldId 或 field_indices.fieldId）
- *    → 阻止，草稿不修改，返回影响面供界面提示"被谁引用"。
- *  - 无引用 → 移除该字段行并清理 metadata.fieldDisplayNames（若该键存在）。
- *
- * 说明：允许删除（无引用）时，按定义不存在指向该字段的 relationship / fieldIndex，
- * 因此无需级联清理它们；仅字段行与其显示名元数据需要移除。
+ * 未确认调用保留旧引用保护。confirmed:true 表示界面已经列出影响并获用户确认，
+ * 删除字段及关联规则/索引/外键等；具体合同见 field-delete-20261127.md。
  */
-export function deleteField(state: WorkspaceState, args: { fieldId: string }): FieldOpResult {
+export function deleteField(state: WorkspaceState, args: { fieldId: string; confirmed?: boolean }): FieldOpResult {
     const field = findField(state, args.fieldId);
     if (!field) {
         return fail({ code: "FIELD_NOT_FOUND", message: "Field not found in the current draft." });
     }
+    if (args.confirmed) return { ok: true, state: deleteConfirmedField(state, args.fieldId) };
     const impact = fieldImpact(state.draft.catalog, args.fieldId);
     if (impact.blocking > 0) {
         return fail({

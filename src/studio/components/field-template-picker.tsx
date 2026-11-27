@@ -134,14 +134,14 @@ export function FieldTemplatePicker({
   return (
     <div>
       <label>
-        业务类型模板:
+        字段模板:
         <select
           data-testid="field-template-picker"
           value={selectedTemplateId ?? ""}
           onChange={handleChange}
           disabled={templates.length === 0}
         >
-          <option value="">请选择类型模板（或自定义）</option>
+          <option value="">请选择字段模板（或自定义）</option>
           {renderOptions()}
         </select>
       </label>

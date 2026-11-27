@@ -1,5 +1,6 @@
 // Modified for Momo DataFlow, 2026-11-27. See NOTICE.md.
 import { CreateDesignDialog } from "./create-design-dialog";
+import { DesignLibraryDialog } from "./design-library-dialog";
 import { DesignImportDialog } from "./design-import-dialog";
 import { useDatabaseOperations } from "../../providers/database-provider/database-provider";
 import {
@@ -86,6 +87,8 @@ function Workbench({ children }: { children?: ReactNode }) {
   const [importOpen, setImportOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [importFiles, setImportFiles] = useState<File[] | undefined>();
+  const [deleteLibraryOpen, setDeleteLibraryOpen] = useState(false);
   const [settings, setSettings] = useState(false),
     [db, setDb] = useState(
       () =>
@@ -122,7 +125,7 @@ function Workbench({ children }: { children?: ReactNode }) {
   };
   const sections = [
     { to: "/studio/tables", name: "表字段", Icon: Table2 },
-    { to: "/studio/templates", name: "类型模板", Icon: SlidersHorizontal },
+    { to: "/studio/templates", name: "字段模板", Icon: SlidersHorizontal },
     { to: "/studio/flows", name: "业务流程", Icon: Workflow },
     { to: "/studio/overview", name: "关系总览", Icon: Network },
   ];
@@ -141,7 +144,33 @@ function Workbench({ children }: { children?: ReactNode }) {
   }
   return (
     <NavContext.Provider value={{ go, databaseId: db, createDesign: () => setCreateOpen(true) }}>
-      <div className="studio-workbench" data-testid="studio-root">
+      <div
+        className="studio-workbench"
+        data-testid="studio-root"
+        onDragOver={(e) => {
+          if (e.dataTransfer.types.includes("Files")) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "copy";
+          }
+        }}
+        onDrop={(e) => {
+          if (!e.dataTransfer.types.includes("Files")) return;
+          e.preventDefault();
+          e.stopPropagation();
+          if (
+            importOpen ||
+            createOpen ||
+            aboutOpen ||
+            settings ||
+            deleteLibraryOpen ||
+            guard.pendingTo ||
+            (e.target as Element).closest('[role="dialog"]')
+          )
+            return;
+          setImportFiles(Array.from(e.dataTransfer.files));
+          setImportOpen(true);
+        }}
+      >
         <header className="studio-chrome">
           <Link
             className="studio-brand"
@@ -209,9 +238,20 @@ function Workbench({ children }: { children?: ReactNode }) {
             <button
               data-testid="open-design-import"
               className="studio-settings-button"
-              onClick={() => setImportOpen(true)}
+              onClick={() => {
+                setImportFiles(undefined);
+                setImportOpen(true);
+              }}
             >
               导入设计包
+            </button>
+            <button
+              className="studio-settings-button"
+              data-testid="delete-design-library"
+              disabled={!db}
+              onClick={() => setDeleteLibraryOpen(true)}
+            >
+              删除设计库
             </button>
             <SaveStatus />
             <button
@@ -242,18 +282,31 @@ function Workbench({ children }: { children?: ReactNode }) {
           databaseOperations.switchDatabase(id); setDb(id); setCreateOpen(false); go("/studio/tables");
         }} />}
         {aboutOpen && <Modal title="关于 Momo DataFlow" onClose={() => setAboutOpen(false)}>
-          <p>Momo DataFlow 0.1.0-beta.1，基于 StackRender 二次开发。修改日期：2026-11-27。</p>
+          <p>Momo DataFlow 0.1.0-beta.2，基于 StackRender 二次开发。修改日期：2026-11-27。</p>
           <p>原项目及贡献者版权继续保留；本修改版依 GNU AGPL v3 提供，不附带任何担保。</p>
           <p><a href="https://github.com/stackrender/stackrender" target="_blank" rel="noreferrer">StackRender 原项目</a> · <a href="https://github.com/Momostar33/momo-dataflow" target="_blank" rel="noreferrer">本版本源代码</a> · <a href="/LICENSE.txt" target="_blank" rel="noreferrer">AGPL-3.0 许可全文</a></p>
         </Modal>}
         {importOpen && (
           <DesignImportDialog
+            initialFiles={importFiles}
             onClose={() => setImportOpen(false)}
             onImported={(id) => {
               databaseOperations.switchDatabase(id);
               setDb(id);
               setImportOpen(false);
               go("/studio/flows");
+            }}
+          />
+        )}
+        {deleteLibraryOpen && (
+          <DesignLibraryDialog
+            databaseId={db}
+            onClose={() => setDeleteLibraryOpen(false)}
+            onDeleted={(id) => {
+              databaseOperations.switchDatabase(id || undefined);
+              setDb(id);
+              setDeleteLibraryOpen(false);
+              go("/studio/tables");
             }}
           />
         )}

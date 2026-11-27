@@ -1,3 +1,4 @@
+import { nextRelationName } from "./relation-names";
 import type {
   WorkspaceState,
   WorkspaceSnapshot,
@@ -47,7 +48,7 @@ export function saveTransition(
     transitionId,
     state: withDraftMutations(state, (d) => {
       const f = d.business!.flows.find((f) => f.flowId === flowId)!;
-      const value = { ...input, transitionId };
+      const value = { ...input, label: input.label.trim() || nextRelationName(state.draft.business, flowId), transitionId };
       const i =
         f.transitions?.findIndex((t) => t.transitionId === transitionId) ?? -1;
       if (!f.transitions) f.transitions = [];

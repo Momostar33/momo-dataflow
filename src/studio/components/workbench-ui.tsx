@@ -112,3 +112,112 @@ export function Modal({
     </div>
   );
 }
+
+/** Right-hand inspector. Folding keeps private form components mounted. */
+export function PropertiesPanel({ children }: { children: ReactNode }) {
+  const preference = "stackrender.properties-width";
+  const [width, setWidth] = useState<number | null>(() => {
+    try {
+      const raw = localStorage.getItem(preference);
+      const value = raw === null ? NaN : Number(raw);
+      return Number.isFinite(value)
+        ? Math.max(280, Math.min(640, value))
+        : null;
+    } catch {
+      return null;
+    }
+  });
+  const [collapsed, setCollapsed] = useState(false);
+  const panel = useRef<HTMLElement | null>(null);
+  const [measuredWidth, setMeasuredWidth] = useState(440);
+  useEffect(() => {
+    const el = panel.current;
+    if (!el) return;
+    const measure = () =>
+      setMeasuredWidth(Math.round(el.getBoundingClientRect().width));
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    measure();
+    return () => observer.disconnect();
+  }, []);
+  const start = useRef<{ x: number; width: number } | null>(null);
+  useEffect(() => {
+    try {
+      if (width === null) localStorage.removeItem(preference);
+      else localStorage.setItem(preference, String(width));
+    } catch {
+      /* Width changes still work when browser storage is unavailable. */
+    }
+  }, [width]);
+  const clamp = (value: number) => Math.max(280, Math.min(640, value));
+  return (
+    <aside
+      ref={panel}
+      className={`studio-properties ${collapsed ? "is-collapsed" : ""}`}
+      style={collapsed ? { width: 32 } : width === null ? undefined : { width }}
+    >
+      {!collapsed && (
+        <div
+          role="separator"
+          tabIndex={0}
+          aria-orientation="vertical"
+          aria-label="调整右侧属性栏宽度"
+          aria-valuenow={measuredWidth}
+          aria-valuemin={280}
+          aria-valuemax={640}
+          className="studio-properties-resize"
+          title="拖动调整宽度，双击恢复默认"
+          onDoubleClick={() => setWidth(null)}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+              e.preventDefault();
+              const current =
+                e.currentTarget.parentElement?.getBoundingClientRect().width ??
+                440;
+              setWidth(clamp(current + (e.key === "ArrowLeft" ? 20 : -20)));
+            }
+          }}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            start.current = {
+              x: e.clientX,
+              width:
+                e.currentTarget.parentElement?.getBoundingClientRect().width ??
+                440,
+            };
+            e.currentTarget.setPointerCapture(e.pointerId);
+          }}
+          onPointerMove={(e) => {
+            if (start.current)
+              setWidth(
+                clamp(start.current.width + start.current.x - e.clientX),
+              );
+          }}
+          onPointerUp={(e) => {
+            start.current = null;
+            if (e.currentTarget.hasPointerCapture(e.pointerId))
+              e.currentTarget.releasePointerCapture(e.pointerId);
+          }}
+          onPointerCancel={() => {
+            start.current = null;
+          }}
+          onLostPointerCapture={() => {
+            start.current = null;
+          }}
+        />
+      )}
+      <button
+        className="studio-properties-toggle"
+        aria-label={collapsed ? "展开右侧属性栏" : "收起右侧属性栏"}
+        aria-expanded={!collapsed}
+        title={collapsed ? "展开属性栏" : "收起属性栏"}
+        onClick={() => setCollapsed((value) => !value)}
+      >
+        {collapsed ? "‹" : "›"}
+      </button>
+      <div className="studio-properties-body" hidden={collapsed}>
+        {children}
+      </div>
+    </aside>
+  );
+}

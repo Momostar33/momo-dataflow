@@ -1,3 +1,4 @@
+import { FieldInsertionProvider } from "./field-insertion-context";
 import { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { useReactFlow } from "@xyflow/react";
@@ -28,7 +29,7 @@ import type {
 import { FlowCanvas, type FlowSelection } from "../canvas/flow-canvas";
 import { RulePanel } from "./rule-panel";
 import { ReferenceActions } from "../canvas/reference-actions";
-import { SidePanel, Empty, Modal } from "./workbench-ui";
+import { SidePanel, Empty, Modal, PropertiesPanel } from "./workbench-ui";
 import { useStudioNavigation } from "./studio-shell";
 type TransitionDraft = Omit<FlowTransition, "transitionId"> & {
   transitionId?: string;
@@ -191,397 +192,405 @@ export function FlowPage() {
       ? flow.transitions?.find((t) => t.transitionId === sel.id)
       : null);
   return (
-    <div className="studio-flow-editor" data-testid="flow-page">
-      <SidePanel initial={280}>
-        <div className="studio-panel-heading">
-          <button
-            aria-label="返回业务流程"
-            onClick={() => nav.go("/studio/flows")}
-          >
-            <ArrowLeft size={15} />
-          </button>
-          <div>
-            <strong>{flow.name}</strong>
-            <small>
-              {flow.steps.length} 个节点 · {refs.length} 处表引用
-            </small>
-          </div>
-        </div>
-        <div className="studio-tabs">
-          {(
-            [
-              ["steps", "步骤与图形"],
-              ["tables", "已有表目录"],
-              ["rules", "字段规则"],
-            ] as const
-          ).map(([id, label]) => (
+    <FieldInsertionProvider>
+      <div className="studio-flow-editor" data-testid="flow-page">
+        <SidePanel initial={264}>
+          <div className="studio-panel-heading">
             <button
-              key={id}
-              aria-pressed={tab === id}
-              onClick={() => setTab(id)}
+              aria-label="返回业务流程"
+              onClick={() => nav.go("/studio/flows")}
             >
-              {label}
+              <ArrowLeft size={15} />
             </button>
-          ))}
-        </div>
-        <div className="studio-panel-scroll">
-          {tab === "steps" && (
-            <>
-              <div className="studio-shapes">
-                {shapes.map(([kind, label, Icon]) => (
+            <div>
+              <strong>{flow.name}</strong>
+              <small>
+                {flow.steps.length} 个节点 · {refs.length} 处表引用
+              </small>
+            </div>
+          </div>
+          <div className="studio-tabs">
+            {(
+              [
+                ["steps", "步骤与图形"],
+                ["tables", "参与表"],
+                ["rules", "字段规则"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                aria-pressed={tab === id}
+                onClick={() => setTab(id)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="studio-panel-scroll">
+            {tab === "steps" && (
+              <>
+                <p className="studio-section-caption">添加流程节点</p>
+                <div className="studio-shapes">
+                  {shapes.map(([kind, label, Icon]) => (
+                    <button
+                      key={kind}
+                      data-testid={`add-${kind}`}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData(
+                          "application/x-stackrender-node",
+                          JSON.stringify({ kind }),
+                        );
+                        e.dataTransfer.effectAllowed = "copy";
+                      }}
+                      onClick={() => create(kind)}
+                    >
+                      <Icon size={17} />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <p className="studio-help">
+                  点击添加，或拖到画布。选中节点后在右侧编辑；节点右侧端口连接到下一节点。
+                </p>
+                <p className="studio-section-caption">
+                  流程节点 · {flow.steps.length}
+                </p>
+                {flow.steps.map((s, i) => (
                   <button
-                    key={kind}
-                    data-testid={`add-${kind}`}
+                    key={s.stepId}
+                    data-testid={`step-row-${s.stepId}`}
+                    className={`studio-resource ${selectedStepId === s.stepId ? "active" : ""}`}
+                    onClick={() => {
+                      select({ kind: "step", id: s.stepId });
+                      rf.fitBounds(
+                        { x: s.x, y: s.y, width: s.w, height: s.h },
+                        { duration: 250, padding: 0.4 },
+                      );
+                    }}
+                  >
+                    <Layers size={14} />
+                    <div>
+                      <strong>
+                        {i + 1}. {s.name}
+                      </strong>
+                      <small>
+                        {shapes.find((k) => k[0] === (s.kind ?? "step"))?.[1]} ·{" "}
+                        {refs.filter((r) => r.stepId === s.stepId).length} 张表
+                      </small>
+                    </div>
+                  </button>
+                ))}
+              </>
+            )}
+            {tab === "tables" && (
+              <>
+                <label className="studio-search">
+                  <Search size={14} />
+                  <input
+                    placeholder="搜索表名、说明或备注"
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                  />
+                </label>
+                <p className="studio-help">
+                  把表拖入业务步骤框；也可选中步骤后点添加。仅引用表，不复制表定义。
+                </p>
+                {filtered.map((t) => (
+                  <div
+                    className="studio-resource"
+                    key={t.id}
                     draggable
+                    data-testid={`drag-table-${t.id}`}
                     onDragStart={(e) => {
                       e.dataTransfer.setData(
-                        "application/x-stackrender-node",
-                        JSON.stringify({ kind }),
+                        "application/x-stackrender-table",
+                        JSON.stringify({ tableId: t.id }),
                       );
                       e.dataTransfer.effectAllowed = "copy";
                     }}
-                    onClick={() => create(kind)}
                   >
-                    <Icon size={17} />
-                    {label}
+                    <Table2 size={14} />
+                    <div>
+                      <strong>
+                        {ctx.state.draft.metadata.tableDisplayNames[t.id] ||
+                          t.name}
+                      </strong>
+                      <small>{t.name}</small>
+                    </div>
+                    <button
+                      aria-label={`添加表 ${t.name}`}
+                      disabled={!selectedStepId}
+                      onClick={() => attach(t.id)}
+                    >
+                      <Plus size={14} />
+                    </button>
+                  </div>
+                ))}
+                {!filtered.length && (
+                  <Empty>当前设计库暂无匹配的表。先在表字段目录创建。</Empty>
+                )}
+              </>
+            )}
+            {tab === "rules" && (
+              <>
+                <button
+                  data-testid="new-rule"
+                  className="studio-wide"
+                  onClick={() => {
+                    setCandidate(null);
+                    setTransition(null);
+                    setSel({ kind: "rule", id: "new" });
+                  }}
+                >
+                  <Plus size={14} />
+                  新建字段规则
+                </button>
+                {rules.map((r) => (
+                  <button
+                    key={r.ruleId}
+                    data-testid={`rule-row-${r.ruleId}`}
+                    className={`studio-resource ${sel?.id === r.ruleId ? "active" : ""}`}
+                    onClick={() => select({ kind: "rule", id: r.ruleId })}
+                  >
+                    <Link2 size={14} />
+                    <div>
+                      <strong>{r.name}</strong>
+                      <small>
+                        {r.conditions.length} 条匹配 · {r.mappings.length}{" "}
+                        行映射
+                      </small>
+                    </div>
                   </button>
                 ))}
-              </div>
-              <p className="studio-help">
-                点击添加，或拖到画布。选中节点后在右侧编辑；节点右侧端口连接到下一节点。
+                {!rules.length && (
+                  <Empty>从字段端口连线，可预填匹配或映射规则。</Empty>
+                )}
+              </>
+            )}
+          </div>
+        </SidePanel>
+        <FlowCanvas
+          key={flowId}
+          flowId={flowId}
+          selection={sel}
+          onSelect={select}
+          onRuleCandidate={propose}
+          onTransitionCandidate={(t) => {
+            setCandidate(null);
+            setTransition(t);
+            setSel({ kind: "transition", id: "new" });
+          }}
+        />
+        <PropertiesPanel>
+          <div className="studio-properties-title">
+            <strong>属性与业务逻辑</strong>
+            <span>当前选中对象</span>
+          </div>
+          <div className="studio-properties-scroll">
+            {error && (
+              <p role="alert" className="studio-error">
+                {error}
               </p>
-              {flow.steps.map((s, i) => (
-                <button
-                  key={s.stepId}
-                  data-testid={`step-row-${s.stepId}`}
-                  className={`studio-resource ${selectedStepId === s.stepId ? "active" : ""}`}
-                  onClick={() => {
-                    select({ kind: "step", id: s.stepId });
-                    rf.fitBounds(
-                      { x: s.x, y: s.y, width: s.w, height: s.h },
-                      { duration: 250, padding: 0.4 },
+            )}
+            {!sel && (
+              <Empty>
+                <Workflow size={28} />
+                <strong>选择步骤、表或连线</strong>
+                <p>
+                  左侧添加图形与表，中间自由绘图；右侧编辑名称、条件、映射公式和说明。
+                </p>
+              </Empty>
+            )}
+            {sel?.kind === "step" &&
+              flow.steps.find((s) => s.stepId === sel.id) && (
+                <StepProperties
+                  key={sel.id}
+                  step={flow.steps.find((s) => s.stepId === sel.id)!}
+                  flowId={flowId}
+                  onAttach={() => setTab("tables")}
+                  onDelete={() => {
+                    const removed = refs
+                      .filter((r) => r.stepId === sel.id)
+                      .map((r) => r.refId);
+                    const affected = rules.filter(
+                      (r) =>
+                        r.conditions.some(
+                          (c) =>
+                            removed.includes(c.left?.refId ?? "") ||
+                            removed.includes(c.right?.refId ?? ""),
+                        ) ||
+                        r.mappings.some(
+                          (m) =>
+                            removed.includes(m.target?.refId ?? "") ||
+                            m.expr.some(
+                              (t) =>
+                                t.kind === "field" && removed.includes(t.refId),
+                            ),
+                        ),
                     );
+                    setConfirm({
+                      title: "删除节点",
+                      body: `将移除此节点、${removed.length} 处表引用、${affected.length} 条字段规则及相连流程箭头；目录中的表不会被删除。`,
+                      action: () => {
+                        const result = ctx.applyOperation((s) =>
+                          deleteStep(s, {
+                            flowId,
+                            stepId: sel.id,
+                            confirmed: true,
+                          }),
+                        );
+                        if (!result.ok) setError(result.error.message);
+                        else select(null);
+                      },
+                    });
                   }}
-                >
-                  <Layers size={14} />
-                  <div>
-                    <strong>
-                      {i + 1}. {s.name}
-                    </strong>
-                    <small>
-                      {shapes.find((k) => k[0] === (s.kind ?? "step"))?.[1]} ·{" "}
-                      {refs.filter((r) => r.stepId === s.stepId).length} 张表
-                    </small>
-                  </div>
-                </button>
-              ))}
-            </>
-          )}
-          {tab === "tables" && (
-            <>
-              <label className="studio-search">
-                <Search size={14} />
-                <input
-                  placeholder="搜索表名、说明或备注"
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
                 />
-              </label>
-              <p className="studio-help">
-                把表拖入业务步骤框；也可选中步骤后点添加。仅引用表，不复制表定义。
-              </p>
-              {filtered.map((t) => (
-                <div
-                  className="studio-resource"
-                  key={t.id}
-                  draggable
-                  data-testid={`drag-table-${t.id}`}
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData(
-                      "application/x-stackrender-table",
-                      JSON.stringify({ tableId: t.id }),
-                    );
-                    e.dataTransfer.effectAllowed = "copy";
-                  }}
-                >
-                  <Table2 size={14} />
-                  <div>
-                    <strong>
-                      {ctx.state.draft.metadata.tableDisplayNames[t.id] ||
-                        t.name}
-                    </strong>
-                    <small>{t.name}</small>
-                  </div>
-                  <button
-                    aria-label={`添加表 ${t.name}`}
-                    disabled={!selectedStepId}
-                    onClick={() => attach(t.id)}
-                  >
-                    <Plus size={14} />
-                  </button>
-                </div>
-              ))}
-              {!filtered.length && (
-                <Empty>当前设计库暂无匹配的表。先在表字段目录创建。</Empty>
               )}
-            </>
-          )}
-          {tab === "rules" && (
-            <>
-              <button
-                data-testid="new-rule"
-                className="studio-wide"
-                onClick={() => {
-                  setCandidate(null);
-                  setTransition(null);
-                  setSel({ kind: "rule", id: "new" });
-                }}
-              >
-                <Plus size={14} />
-                新建字段规则
-              </button>
-              {rules.map((r) => (
+            {selectedRef && (
+              <>
+                <h3>
+                  {
+                    ctx.state.draft.catalog.tables.find(
+                      (t) => t.id === selectedRef.tableId,
+                    )?.name
+                  }
+                </h3>
+                <p className="studio-help">
+                  本流程局部表引用。移除不会删除表定义。
+                </p>
+                <ReferenceActions refId={selectedRef.refId} />
+                <h4>画布可见字段</h4>
                 <button
-                  key={r.ruleId}
-                  data-testid={`rule-row-${r.ruleId}`}
-                  className={`studio-resource ${sel?.id === r.ruleId ? "active" : ""}`}
-                  onClick={() => select({ kind: "rule", id: r.ruleId })}
+                  onClick={() =>
+                    ctx.applyOperation((s) =>
+                      updateReference(s, {
+                        refId: selectedRef.refId,
+                        visibleFieldIds: s.draft.catalog.fields
+                          .filter((f) => f.tableId === selectedRef.tableId)
+                          .map((f) => f.id),
+                      }),
+                    )
+                  }
                 >
-                  <Link2 size={14} />
-                  <div>
-                    <strong>{r.name}</strong>
-                    <small>
-                      {r.conditions.length} 条匹配 · {r.mappings.length} 行映射
-                    </small>
-                  </div>
+                  显示全部字段
                 </button>
-              ))}
-              {!rules.length && (
-                <Empty>从字段端口连线，可预填匹配或映射规则。</Empty>
-              )}
-            </>
-          )}
-        </div>
-      </SidePanel>
-      <FlowCanvas
-        key={flowId}
-        flowId={flowId}
-        selection={sel}
-        onSelect={select}
-        onRuleCandidate={propose}
-        onTransitionCandidate={(t) => {
-          setCandidate(null);
-          setTransition(t);
-          setSel({ kind: "transition", id: "new" });
-        }}
-      />
-      <aside className="studio-properties">
-        <div className="studio-properties-title">属性与业务逻辑</div>
-        <div className="studio-properties-scroll">
-          {error && (
-            <p role="alert" className="studio-error">
-              {error}
-            </p>
-          )}
-          {!sel && (
-            <Empty>
-              <Workflow size={28} />
-              <strong>选择步骤、表或连线</strong>
-              <p>
-                左侧添加图形与表，中间自由绘图；右侧编辑名称、条件、映射公式和说明。
-              </p>
-            </Empty>
-          )}
-          {sel?.kind === "step" &&
-            flow.steps.find((s) => s.stepId === sel.id) && (
-              <StepProperties
-                key={sel.id}
-                step={flow.steps.find((s) => s.stepId === sel.id)!}
-                flowId={flowId}
-                onAttach={() => setTab("tables")}
-                onDelete={() => {
-                  const removed = refs
-                    .filter((r) => r.stepId === sel.id)
-                    .map((r) => r.refId);
-                  const affected = rules.filter(
+                {ctx.state.draft.catalog.fields
+                  .filter((f) => f.tableId === selectedRef.tableId)
+                  .map((f) => (
+                    <label className="studio-checkbox-row" key={f.id}>
+                      <input
+                        type="checkbox"
+                        checked={
+                          !selectedRef.visibleFieldIds ||
+                          selectedRef.visibleFieldIds.includes(f.id)
+                        }
+                        onChange={(e) => {
+                          const all =
+                            selectedRef.visibleFieldIds ??
+                            ctx.state.draft.catalog.fields
+                              .filter((f) => f.tableId === selectedRef.tableId)
+                              .map((f) => f.id);
+                          ctx.applyOperation((s) =>
+                            updateReference(s, {
+                              refId: selectedRef.refId,
+                              visibleFieldIds: e.target.checked
+                                ? [...all, f.id]
+                                : all.filter((id) => id !== f.id),
+                            }),
+                          );
+                        }}
+                      />
+                      {ctx.state.draft.metadata.fieldDisplayNames[f.id] ||
+                        f.name}
+                    </label>
+                  ))}
+                <h4>相关字段规则</h4>
+                {rules
+                  .filter(
                     (r) =>
                       r.conditions.some(
                         (c) =>
-                          removed.includes(c.left?.refId ?? "") ||
-                          removed.includes(c.right?.refId ?? ""),
+                          c.left?.refId === selectedRef.refId ||
+                          c.right?.refId === selectedRef.refId,
                       ) ||
                       r.mappings.some(
                         (m) =>
-                          removed.includes(m.target?.refId ?? "") ||
+                          m.target?.refId === selectedRef.refId ||
                           m.expr.some(
                             (t) =>
-                              t.kind === "field" && removed.includes(t.refId),
+                              t.kind === "field" &&
+                              t.refId === selectedRef.refId,
                           ),
                       ),
-                  );
-                  setConfirm({
-                    title: "删除节点",
-                    body: `将移除此节点、${removed.length} 处表引用、${affected.length} 条字段规则及相连流程箭头；目录中的表不会被删除。`,
-                    action: () => {
-                      const result = ctx.applyOperation((s) =>
-                        deleteStep(s, {
-                          flowId,
-                          stepId: sel.id,
-                          confirmed: true,
-                        }),
-                      );
-                      if (!result.ok) setError(result.error.message);
-                      else select(null);
-                    },
-                  });
-                }}
+                  )
+                  .map((r) => (
+                    <button
+                      className="studio-wide"
+                      key={r.ruleId}
+                      onClick={() => select({ kind: "rule", id: r.ruleId })}
+                    >
+                      {r.name}
+                    </button>
+                  ))}
+              </>
+            )}
+            {sel?.kind === "rule" && (selectedRule || sel.id === "new") && (
+              <RulePanel
+                key={sel.id}
+                flowId={flowId}
+                rule={candidate ? undefined : (selectedRule ?? undefined)}
+                initialCandidate={candidate ?? undefined}
+                onDelete={
+                  selectedRule && !candidate
+                    ? () =>
+                        setConfirm({
+                          title: "删除字段规则",
+                          body: "只删除当前规则及连线，不删除任何表或字段。",
+                          action: () => {
+                            ctx.applyOperation((s) =>
+                              deleteRule(s, { ruleId: selectedRule.ruleId }),
+                            );
+                            select(null);
+                          },
+                        })
+                    : undefined
+                }
+                onClose={() => select(null)}
               />
             )}
-          {selectedRef && (
-            <>
-              <h3>
-                {
-                  ctx.state.draft.catalog.tables.find(
-                    (t) => t.id === selectedRef.tableId,
-                  )?.name
+            {activeTransition && (
+              <TransitionProperties
+                key={
+                  activeTransition.transitionId ??
+                  `${activeTransition.sourceStepId}:${activeTransition.targetStepId}`
                 }
-              </h3>
-              <p className="studio-help">
-                本流程局部表引用。移除不会删除表定义。
-              </p>
-              <ReferenceActions refId={selectedRef.refId} />
-              <h4>画布可见字段</h4>
-              <button
-                onClick={() =>
-                  ctx.applyOperation((s) =>
-                    updateReference(s, {
-                      refId: selectedRef.refId,
-                      visibleFieldIds: s.draft.catalog.fields
-                        .filter((f) => f.tableId === selectedRef.tableId)
-                        .map((f) => f.id),
-                    }),
-                  )
-                }
-              >
-                显示全部字段
-              </button>
-              {ctx.state.draft.catalog.fields
-                .filter((f) => f.tableId === selectedRef.tableId)
-                .map((f) => (
-                  <label className="studio-checkbox-row" key={f.id}>
-                    <input
-                      type="checkbox"
-                      checked={
-                        !selectedRef.visibleFieldIds ||
-                        selectedRef.visibleFieldIds.includes(f.id)
-                      }
-                      onChange={(e) => {
-                        const all =
-                          selectedRef.visibleFieldIds ??
-                          ctx.state.draft.catalog.fields
-                            .filter((f) => f.tableId === selectedRef.tableId)
-                            .map((f) => f.id);
-                        ctx.applyOperation((s) =>
-                          updateReference(s, {
-                            refId: selectedRef.refId,
-                            visibleFieldIds: e.target.checked
-                              ? [...all, f.id]
-                              : all.filter((id) => id !== f.id),
-                          }),
-                        );
-                      }}
-                    />
-                    {ctx.state.draft.metadata.fieldDisplayNames[f.id] || f.name}
-                  </label>
-                ))}
-              <h4>相关字段规则</h4>
-              {rules
-                .filter(
-                  (r) =>
-                    r.conditions.some(
-                      (c) =>
-                        c.left?.refId === selectedRef.refId ||
-                        c.right?.refId === selectedRef.refId,
-                    ) ||
-                    r.mappings.some(
-                      (m) =>
-                        m.target?.refId === selectedRef.refId ||
-                        m.expr.some(
-                          (t) =>
-                            t.kind === "field" && t.refId === selectedRef.refId,
-                        ),
-                    ),
-                )
-                .map((r) => (
-                  <button
-                    className="studio-wide"
-                    key={r.ruleId}
-                    onClick={() => select({ kind: "rule", id: r.ruleId })}
-                  >
-                    {r.name}
-                  </button>
-                ))}
-            </>
-          )}
-          {sel?.kind === "rule" && (selectedRule || sel.id === "new") && (
-            <RulePanel
-              key={sel.id}
-              flowId={flowId}
-              rule={candidate ? undefined : (selectedRule ?? undefined)}
-              initialCandidate={candidate ?? undefined}
-              onClose={() => select(null)}
-            />
-          )}
-          {sel?.kind === "rule" && selectedRule && !candidate && (
-            <button
-              className="danger"
-              onClick={() =>
-                setConfirm({
-                  title: "删除字段规则",
-                  body: "只删除当前规则及其画布连线，不删除任何表或字段。",
-                  action: () => {
-                    ctx.applyOperation((s) =>
-                      deleteRule(s, { ruleId: selectedRule.ruleId }),
-                    );
-                    select(null);
-                  },
-                })
-              }
-            >
-              删除字段规则
-            </button>
-          )}
-          {activeTransition && (
-            <TransitionProperties
-              key={
-                activeTransition.transitionId ??
-                `${activeTransition.sourceStepId}:${activeTransition.targetStepId}`
-              }
-              value={activeTransition}
-              flowId={flowId}
-              onClose={() => select(null)}
-            />
-          )}
-        </div>
-      </aside>
-      {confirm && (
-        <Modal title={confirm.title} onClose={() => setConfirm(null)}>
-          <p>{confirm.body}</p>
-          <div className="studio-actions">
-            <button onClick={() => setConfirm(null)}>取消</button>
-            <button
-              className="danger"
-              onClick={() => {
-                confirm.action();
-                setConfirm(null);
-              }}
-            >
-              确认删除
-            </button>
+                value={activeTransition}
+                flowId={flowId}
+                onClose={() => select(null)}
+              />
+            )}
           </div>
-        </Modal>
-      )}
-    </div>
+        </PropertiesPanel>
+        {confirm && (
+          <Modal title={confirm.title} onClose={() => setConfirm(null)}>
+            <p>{confirm.body}</p>
+            <div className="studio-actions">
+              <button onClick={() => setConfirm(null)}>取消</button>
+              <button
+                className="danger"
+                onClick={() => {
+                  confirm.action();
+                  setConfirm(null);
+                }}
+              >
+                确认删除
+              </button>
+            </div>
+          </Modal>
+        )}
+      </div>
+    </FieldInsertionProvider>
   );
 }
 function StepProperties({
@@ -730,74 +739,30 @@ function TransitionProperties({
       <p className="studio-help">
         只记录顺序、条件及动作说明，不执行任何业务。
       </p>
-      <label>
-        来源节点
-        <select
-          value={draft.sourceStepId}
-          onChange={(e) => setDraft({ ...draft, sourceStepId: e.target.value })}
-        >
-          {flow?.steps.map((s) => (
-            <option value={s.stepId} key={s.stepId}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        目标节点
-        <select
-          value={draft.targetStepId}
-          onChange={(e) => setDraft({ ...draft, targetStepId: e.target.value })}
-        >
-          {flow?.steps.map((s) => (
-            <option value={s.stepId} key={s.stepId}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        连线类型
-        <select
-          data-testid="transition-kind"
-          value={draft.kind}
-          onChange={(e) =>
-            setDraft({
-              ...draft,
-              kind: e.target.value as "sequence" | "trigger",
-            })
-          }
-        >
-          <option value="sequence">流程顺序</option>
-          <option value="trigger">条件 / 触发</option>
-        </select>
-      </label>
+      <div className="studio-bound-pair" aria-label="已连接的模块">
+        <strong>已连接的模块</strong>
+        <div>
+          {flow?.steps.find((s) => s.stepId === value.sourceStepId)?.name} →{" "}
+          {flow?.steps.find((s) => s.stepId === value.targetStepId)?.name}
+        </div>
+        <p>端点由画布连线确定；需要更换对象时重新连线。</p>
+      </div>
       <label>
         连线名称
         <input
           data-testid="transition-label"
           value={draft.label}
           onChange={(e) => setDraft({ ...draft, label: e.target.value })}
-          placeholder="例如：审批通过"
+          placeholder="自动命名"
         />
       </label>
-      <label>
-        条件说明
-        <textarea
-          data-testid="transition-condition"
-          value={draft.condition}
-          onChange={(e) => setDraft({ ...draft, condition: e.target.value })}
-          placeholder="例如：审核状态 = 已通过"
-        />
-      </label>
-      <label>
-        动作与备注
-        <textarea
-          value={draft.note}
-          onChange={(e) => setDraft({ ...draft, note: e.target.value })}
-          placeholder="例如：生成采购单；仅记录，不执行"
-        />
-      </label>
+      {(draft.condition || draft.note) && (
+        <details className="studio-editor-details">
+          <summary>已有连线说明</summary>
+          {draft.condition && <p>{draft.condition}</p>}
+          {draft.note && <p>{draft.note}</p>}
+        </details>
+      )}
       {error && (
         <p role="alert" className="studio-error">
           {error}
@@ -812,7 +777,11 @@ function TransitionProperties({
           data-testid="transition-apply"
           onClick={() => {
             const result = ctx.applyOperation((s) =>
-              saveTransition(s, flowId, draft),
+              saveTransition(s, flowId, {
+                ...draft,
+                sourceStepId: value.sourceStepId,
+                targetStepId: value.targetStepId,
+              }),
             );
             if (result.ok) onClose();
             else setError(result.error.message);

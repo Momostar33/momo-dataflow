@@ -53,7 +53,8 @@ export function ConditionsEditor({
   };
 
   return (
-    <div>
+    <section className="studio-editor-card studio-conditions">
+      <h3>匹配条件</h3>
       <div style={{ marginBottom: "0.5rem" }}>
         <label>
           条件组合:
@@ -68,19 +69,31 @@ export function ConditionsEditor({
         </label>
       </div>
       {conditions.map((cond, idx) => (
-        <div key={cond.id} style={{ marginBottom: "0.5rem" }}>
+        <div key={cond.id} className="studio-condition-row">
           <FieldPicker
             business={business}
             catalog={catalog}
+            fixedRefId={
+              business.refs.length <= 2
+                ? (cond.left?.refId ?? business.refs[0]?.refId)
+                : undefined
+            }
             value={cond.left}
             onChange={(v) => handleConditionChange(idx, "left", v)}
             refTestId={`condition-left-ref-${idx}`}
             fieldTestId={`condition-left-field-${idx}`}
           />
-          <span style={{ margin: "0 0.5rem" }}>=</span>
+          <span className="studio-condition-equals">=</span>
           <FieldPicker
             business={business}
             catalog={catalog}
+            fixedRefId={
+              business.refs.length <= 2
+                ? (cond.right?.refId ??
+                  business.refs[1]?.refId ??
+                  business.refs[0]?.refId)
+                : undefined
+            }
             value={cond.right}
             onChange={(v) => handleConditionChange(idx, "right", v)}
             refTestId={`condition-right-ref-${idx}`}
@@ -89,7 +102,7 @@ export function ConditionsEditor({
           <button
             type="button"
             onClick={() => handleRemove(idx)}
-            style={{ marginLeft: "0.5rem" }}
+            className="studio-remove-condition"
             data-testid={`remove-condition-${idx}`}
           >
             删除条件
@@ -99,6 +112,6 @@ export function ConditionsEditor({
       <button type="button" onClick={handleAdd} data-testid="add-condition">
         添加匹配条件
       </button>
-    </div>
+    </section>
   );
 }

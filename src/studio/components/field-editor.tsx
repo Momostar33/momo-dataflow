@@ -345,7 +345,7 @@ export function FieldEditor({
     );
     const defaults = template?.versions.find((v) => v.version === version);
     if (!defaults) {
-      setError("类型模板版本不存在");
+      setError("字段模板版本不存在");
       return;
     }
     setTypeId(defaults.typeId);
@@ -516,7 +516,7 @@ export function FieldEditor({
         />
         {selectedTemplateId && (
           <p>
-            已采用类型模板；技术类型、精度和小数位由模板统一设置。模板新版须预览确认后批量更新。
+            已采用字段模板；技术类型、精度和小数位由模板统一设置。模板新版须预览确认后批量更新。
           </p>
         )}
       </div>

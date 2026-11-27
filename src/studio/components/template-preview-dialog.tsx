@@ -43,7 +43,7 @@ export function TemplatePreviewDialog({
           <strong>
             {business?.templates.find(
               (t) => t.templateId === preview.templateId,
-            )?.name ?? "类型模板"}{" "}
+            )?.name ?? "字段模板"}{" "}
             · v{preview.version}
           </strong>
         </p>

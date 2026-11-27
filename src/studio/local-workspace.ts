@@ -24,7 +24,7 @@
  *  - 冲突/损坏均为显式 Error 子类，由调用方（Studio 页面）呈现并重新载入。
  */
 
-import { eq, count } from "drizzle-orm";
+import { eq, count, inArray } from "drizzle-orm";
 import { SQLiteTransaction } from "drizzle-orm/sqlite-core";
 import { QueryResult } from "@powersync/web";
 import { ExtractTablesWithRelations } from "drizzle-orm";
@@ -40,8 +40,10 @@ import { field_indices as fieldIndicesModel } from "@/lib/schemas/field_index-sc
 import { studio_document } from "@/lib/schemas/studio-document-schema";
 import {
     deleteFieldsWithCascade,
+    deleteIndicesWithCascade,
     deleteTablesWithCascade,
 } from "@/utils/cascade";
+import { deletedFieldIndexIds } from "./domain/field-deletion";
 import { getTimestamp } from "@/utils/utils";
 
 import { CatalogSnapshot } from "./contracts/catalog";
@@ -232,6 +234,9 @@ export async function saveWorkspace(
             await deleteTablesWithCascade(tablePlan.deletes, tx);
         }
         if (fieldPlan.deletes.length > 0) {
+            // Confirmed field deletion removes entire affected indices, including all member links.
+            const indexIds = deletedFieldIndexIds(savedCatalog ?? live, state.draft.catalog, fieldPlan.deletes);
+            if (indexIds.length) await deleteIndicesWithCascade(indexIds, tx);
             await deleteFieldsWithCascade(fieldPlan.deletes, tx);
         }
 
@@ -342,5 +347,32 @@ export async function importDesignPackage(
         else await tx.insert(studio_document).values(nextDoc);
         const fresh = await readLiveCatalog(tx);
         return initializeWorkspace(fresh, nextDoc);
+    });
+}
+
+/** Explicitly confirmed library removal: one transaction, same revision/fingerprint guards as save/import. */
+export async function deleteDesignLibrary(state: WorkspaceState, databaseId: string): Promise<WorkspaceState> {
+    const { planDesignLibraryDeletion } = await import("./domain/design-library");
+    return db.transaction(async tx => {
+        const doc = await readStudioDocument(tx);
+        parseBusinessDocument(doc?.snapshot ?? null);
+        const live = await readLiveCatalog(tx);
+        assertWorkspaceBaseline(state, live, doc?.revision ?? 0);
+        const plan = planDesignLibraryDeletion(state, databaseId);
+        const r = plan.removed;
+        const chunks = (ids: string[]) => Array.from({length: Math.ceil(ids.length / 200)}, (_, i) => ids.slice(i * 200, i * 200 + 200));
+        for (const ids of chunks(r.fieldIndices)) await tx.delete(fieldIndicesModel).where(inArray(fieldIndicesModel.id, ids));
+        for (const ids of chunks(r.relationships)) await tx.delete(relationshipsModel).where(inArray(relationshipsModel.id, ids));
+        for (const ids of chunks(r.fields)) await tx.delete(fieldsModel).where(inArray(fieldsModel.id, ids));
+        for (const ids of chunks(r.indices)) await tx.delete(indicesModel).where(inArray(indicesModel.id, ids));
+        for (const ids of chunks(r.tables)) await tx.delete(tablesModel).where(inArray(tablesModel.id, ids));
+        await tx.delete(databasesModel).where(eq(databasesModel.id, databaseId));
+        // Preserve other fields, but clear foreign flags if their last cross-library relation was removed.
+        const fieldPlan = computeFieldUpsertPlan(plan.snapshot.catalog.fields, state.draft.catalog.fields);
+        for (const row of fieldPlan.updates) await tx.update(fieldsModel).set(row.changes).where(eq(fieldsModel.id, row.id));
+        const nextDoc = {id: DEFAULT_DOCUMENT_ID, revision: (doc?.revision ?? 0) + 1, updatedAt: getTimestamp(), snapshot: serializeBusinessDocument(plan.snapshot)};
+        if (doc) await tx.update(studio_document).set(nextDoc).where(eq(studio_document.id, DEFAULT_DOCUMENT_ID));
+        else await tx.insert(studio_document).values(nextDoc);
+        return initializeWorkspace(await readLiveCatalog(tx), nextDoc);
     });
 }

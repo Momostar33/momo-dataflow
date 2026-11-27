@@ -1,3 +1,6 @@
+import { useFieldInsertion } from "../components/field-insertion-context";
+import { FIELD_DRAG_TYPE } from "../domain/field-insertion";
+import { toast } from "sonner";
 import {
   Handle,
   Position,
@@ -92,6 +95,7 @@ export function ReferenceNode({
 }: NodeProps<ReferenceFlowNode>) {
   const { applyOperation } = useWorkspace();
   const { reference: r, table } = data;
+  const fieldInsertion = useFieldInsertion();
   if (!table)
     return <div className="studio-ref-node studio-error">此表定义已不存在</div>;
   const fields = r.visibleFieldIds
@@ -137,7 +141,27 @@ export function ReferenceNode({
         fields.map((f) => (
           <div
             key={f.fieldId}
-            className="studio-ref-field"
+            className="studio-ref-field nodrag"
+            draggable
+            title="拖入公式，或 Ctrl/⌘ 点击插入"
+            onDragStart={(e) => {
+              e.stopPropagation();
+              e.dataTransfer.setData(
+                FIELD_DRAG_TYPE,
+                JSON.stringify({ refId: r.refId, fieldId: f.fieldId }),
+              );
+              e.dataTransfer.effectAllowed = "copy";
+            }}
+            onClick={(e) => {
+              if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (
+                  !fieldInsertion.insert({ refId: r.refId, fieldId: f.fieldId })
+                )
+                  toast.info("请先打开要编辑的字段关系");
+              }
+            }}
             data-testid={`reference-field-${r.refId}-${f.fieldId}`}
           >
             <Handle

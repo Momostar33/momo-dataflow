@@ -20,6 +20,7 @@ export interface FieldPickerProps {
   value: FieldToken | null;
   onChange: (value: FieldToken | null) => void;
   flowId?: string;
+  fixedRefId?: string;
   refTestId?: string;
   fieldTestId?: string;
 }
@@ -48,11 +49,13 @@ export function FieldPicker({
   value,
   onChange,
   flowId,
+  fixedRefId,
   refTestId = "field-ref-picker",
   fieldTestId = "field-field-picker",
 }: FieldPickerProps) {
   // Local state for the selected ref id (kept even when field is cleared).
-  const [refId, setRefId] = useState<string>(value?.refId ?? "");
+  const [localRefId, setRefId] = useState<string>(value?.refId ?? "");
+  const refId = fixedRefId ?? localRefId;
   // Search query for refs when >6 refs.
   const [search, setSearch] = useState<string>("");
 
@@ -114,7 +117,7 @@ export function FieldPicker({
   const fieldInvalid = fieldId && !selectedField;
 
   // Determine if the current ref selection is valid.
-  const refInvalid = !selectedRef || !selectedTable;
+  const refInvalid = !!refId && (!selectedRef || !selectedTable);
 
   // Handlers
   const handleRefChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -139,8 +142,8 @@ export function FieldPicker({
 
   // Render
   return (
-    <div>
-      {filteredRefs.length > 6 && (
+    <div className={`studio-field-picker ${fixedRefId ? "is-fixed" : "is-two-column"}`}>
+      {!fixedRefId && filteredRefs.length > 6 && (
         <div style={{ marginBottom: "0.5rem" }}>
           <input
             type="text"
@@ -152,39 +155,47 @@ export function FieldPicker({
         </div>
       )}
       <div style={{ marginBottom: "0.5rem" }}>
-        <select
-          data-testid={refTestId}
-          value={refId}
-          onChange={handleRefChange}
-          style={{ width: "100%" }}
-        >
-          <option value="" disabled>
-            选择步骤 / 表引用
-          </option>
-          {filteredRefs.map((r: (typeof business.refs)[0]) => {
-            const t = tableMap.get(r.tableId);
-            const f = flowMap.get(r.flowId);
-            const s = f?.steps.find(
-              (st: (typeof business.flows)[0]["steps"][0]) =>
-                st.stepId === r.stepId,
-            );
-            const labelParts = [f?.name, s?.name, t?.name].filter(Boolean);
-            const label = labelParts.join(" / ");
-            return (
-              <option key={r.refId} value={r.refId}>
-                {label}
-              </option>
-            );
-          })}
-        </select>
+        {fixedRefId ? (
+          <div className="studio-fixed-table" title={selectedTable?.name}>
+            {selectedTable?.name ?? "表引用已失效"}
+          </div>
+        ) : (
+          <select
+            aria-label="选择关系中的表"
+            data-testid={refTestId}
+            value={refId}
+            onChange={handleRefChange}
+            style={{ width: "100%" }}
+          >
+            <option value="" disabled>
+              选择步骤 / 表引用
+            </option>
+            {filteredRefs.map((r: (typeof business.refs)[0]) => {
+              const t = tableMap.get(r.tableId);
+              const flow = flowMap.get(r.flowId);
+              const s = flow?.steps.find(
+                (st: (typeof business.flows)[0]["steps"][0]) =>
+                  st.stepId === r.stepId,
+              );
+              const labelParts = [s?.name, t?.name].filter(Boolean);
+              const label = labelParts.join(" / ");
+              return (
+                <option key={r.refId} value={r.refId}>
+                  {label}
+                </option>
+              );
+            })}
+          </select>
+        )}
         {refInvalid && (
           <div style={{ color: "red", marginTop: "0.25rem" }}>
-            Invalid ref selected
+            表引用已失效，请重新选择
           </div>
         )}
       </div>
       <div>
         <select
+          aria-label="选择字段"
           data-testid={fieldTestId}
           value={fieldId}
           onChange={handleFieldChange}
@@ -202,7 +213,7 @@ export function FieldPicker({
         </select>
         {fieldInvalid && (
           <div style={{ color: "red", marginTop: "0.25rem" }}>
-            Invalid field selected
+            字段已失效，请重新选择
           </div>
         )}
       </div>
