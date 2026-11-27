@@ -8,6 +8,12 @@ Document which tables participate in each business step, where fields come from,
 
 > **v0.1.0-beta.4 · Preview.** The interface supports Chinese and English. Formulas and trigger arrows describe logic; they do not execute calculations or business operations.
 
+## Why this project exists
+
+When documenting a business, process diagrams, table schemas and field descriptions often live in separate documents or tools. It is easy to lose track of the tables and fields involved in a process, or to inspect a field without understanding the business step that uses it. This project brings those pieces into one workbench so they can be reviewed, connected and discussed together.
+
+The current UI still has awkward layouts, editing operations and interaction details. There is plenty to improve through real use. By opening this project, I hope other users and developers can build on the existing work, improve the interface and editing experience, and make the connection between business processes and data structures clearer. Feedback, design discussions and [contributions](CONTRIBUTING.md) are welcome.
+
 ## Screenshots
 
 These are real screenshots of the local app using fictional design metadata. UI language does not translate user-authored names or notes. The importable [showcase package](docs/usage/examples/showcase-purchase.stackrender.json) supplies the tables and equality conditions; templates and formulas shown here are added through the interface.
